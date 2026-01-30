@@ -132,6 +132,9 @@
 .badge-new_position { background: #e0e7ff; color: #3730a3; }
 .badge-substitution { background: #fce7f3; color: #9d174d; }
 .badge-head { background: #e0e7ff; color: #3730a3; }
+.badge-escalated { background: #fef3c7; color: #92400e; }
+.btn-warning { background: #f59e0b; color: #fff; }
+.btn-warning:hover { background: #d97706; }
 
 .row-head { background: #fafafe; }
 

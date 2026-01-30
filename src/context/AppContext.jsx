@@ -34,13 +34,34 @@ function reducer(state, action) {
     case 'APPROVE_PROPOSAL': {
       const proposal = state.proposals.find(p => p.id === action.payload.id);
       if (!proposal) return state;
+      // Collect the target org and all its ancestors
+      const affectedOrgIds = [];
+      let current = proposal.orgId;
+      while (current) {
+        affectedOrgIds.push(current);
+        const node = state.orgNodes.find(n => n.id === current);
+        current = node?.parentId || null;
+      }
       const updatedBudgets = state.budgets.map(b =>
-        b.orgId === proposal.orgId ? { ...b, budgetedHC: b.budgetedHC + proposal.delta } : b
+        affectedOrgIds.includes(b.orgId) ? { ...b, budgetedHC: b.budgetedHC + proposal.delta } : b
       );
       const updatedProposals = state.proposals.map(p =>
         p.id === action.payload.id ? { ...p, status: 'approved', approvedBy: action.payload.approvedBy } : p
       );
       return { ...state, proposals: updatedProposals, budgets: updatedBudgets };
+    }
+    case 'ESCALATE_PROPOSAL': {
+      // Move the proposal up: the current approver's org becomes the new requestedBy,
+      // so the proposal appears in the next-level superior's approval queue
+      const escalatorOrg = action.payload.escalatedByOrg;
+      const escalatorNode = state.orgNodes.find(n => n.id === escalatorOrg);
+      const parentOrgId = escalatorNode?.parentId || null;
+      if (!parentOrgId) return state; // already at top, cannot escalate
+      return { ...state, proposals: state.proposals.map(p =>
+        p.id === action.payload.id
+          ? { ...p, requestedBy: escalatorOrg, escalatedFrom: p.requestedBy, escalatedBy: action.payload.escalatedByOrg }
+          : p
+      ) };
     }
     case 'REJECT_PROPOSAL':
       return { ...state, proposals: state.proposals.map(p => p.id === action.payload.id ? { ...p, status: 'rejected', approvedBy: action.payload.rejectedBy } : p) };
@@ -107,6 +128,7 @@ const AUDITED_ACTIONS = {
   SUBMIT_PROPOSAL: 'Submitted budget change proposal for approval',
   APPROVE_PROPOSAL: 'Approved budget change proposal',
   REJECT_PROPOSAL: 'Rejected budget change proposal',
+  ESCALATE_PROPOSAL: 'Escalated budget change proposal to superior',
   ADD_BUDGET: 'Created budget entry',
   UPDATE_BUDGET: 'Updated budget entry',
   DELETE_BUDGET: 'Deleted budget entry',

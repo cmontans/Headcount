@@ -1,9 +1,11 @@
 import { useApp } from '../context/AppContext';
 
 export default function Approvals() {
-  const { currentUserOrgId, proposals, requisitions, budgets, getChildren, getNode, getHead, dispatch } = useApp();
+  const { currentUserOrgId, proposals, requisitions, budgets, getChildren, getNode, getHead, getParent, dispatch } = useApp();
 
   const directReportIds = getChildren(currentUserOrgId).map(c => c.id);
+  const parentOrg = getParent(currentUserOrgId);
+  const canEscalate = !!parentOrg;
 
   const pendingProposals = proposals.filter(p =>
     p.status === 'pending_approval' && directReportIds.includes(p.requestedBy)
@@ -27,6 +29,10 @@ export default function Approvals() {
 
   function rejectProposal(id) {
     dispatch({ type: 'REJECT_PROPOSAL', payload: { id, rejectedBy: currentUserOrgId } });
+  }
+
+  function escalateProposal(id) {
+    dispatch({ type: 'ESCALATE_PROPOSAL', payload: { id, escalatedByOrg: currentUserOrgId } });
   }
 
   function approveReq(id) {
@@ -61,6 +67,7 @@ export default function Approvals() {
               <th>Current Budget</th>
               <th>After Approval</th>
               <th>Justification</th>
+              <th>Escalated</th>
               <th>Date</th>
               <th>Actions</th>
             </tr>
@@ -71,6 +78,7 @@ export default function Approvals() {
               const team = getNode(p.orgId);
               const budget = budgets.find(b => b.orgId === p.orgId);
               const currentHC = budget ? budget.budgetedHC : 0;
+              const escalatedFromNode = p.escalatedFrom ? getNode(p.escalatedFrom) : null;
               return (
                 <tr key={p.id}>
                   <td>{requestorHead?.name || '—'}</td>
@@ -80,9 +88,11 @@ export default function Approvals() {
                   <td>{currentHC}</td>
                   <td><strong>{currentHC + p.delta}</strong></td>
                   <td>{p.justification}</td>
+                  <td>{escalatedFromNode ? <span className="badge badge-escalated">from {escalatedFromNode.title}</span> : '—'}</td>
                   <td>{p.createdAt}</td>
                   <td className="actions">
                     <button className="btn btn-sm btn-success" onClick={() => approveProposal(p.id)}>Approve</button>
+                    {canEscalate && <button className="btn btn-sm btn-warning" onClick={() => escalateProposal(p.id)}>Escalate</button>}
                     <button className="btn btn-sm btn-danger" onClick={() => rejectProposal(p.id)}>Reject</button>
                   </td>
                 </tr>
