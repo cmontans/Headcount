@@ -12,6 +12,7 @@ export default function Navbar() {
         <NavLink to="/approvals">Approvals</NavLink>
         <NavLink to="/budget">Budget</NavLink>
         <NavLink to="/actuals">Actuals</NavLink>
+        <NavLink to="/requisitions">Requisitions</NavLink>
       </div>
       <UserSwitcher />
     </nav>

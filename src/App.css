@@ -127,6 +127,10 @@
 .badge-filled { background: #dbeafe; color: #1e40af; }
 .badge-active { background: #dcfce7; color: #166534; }
 .badge-departed { background: #f1f5f9; color: #475569; }
+.badge-open { background: #fef3c7; color: #92400e; }
+.badge-cancelled { background: #f1f5f9; color: #475569; }
+.badge-new_position { background: #e0e7ff; color: #3730a3; }
+.badge-substitution { background: #fce7f3; color: #9d174d; }
 .badge-head { background: #e0e7ff; color: #3730a3; }
 
 .row-head { background: #fafafe; }

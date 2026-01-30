@@ -62,4 +62,15 @@ const actuals = [
   { id: uuid(), orgId: 'u8', name: 'Tina Brooks', role: 'Account Executive', startDate: '2024-08-01', status: 'active', isHead: false },
 ];
 
-export { orgNodes, budgets, proposals, actuals };
+// Job Requisitions: requests to fill a specific position (new or substitution)
+// type: new_position | substitution
+// status: draft | pending_approval | approved | rejected | open | filled | cancelled
+const requisitions = [
+  { id: uuid(), orgId: 'u9', role: 'Senior React Developer', type: 'new_position', justification: 'Approved in budget expansion', replacingName: null, status: 'open', requestedBy: 'u9', approvedBy: 'u5', createdAt: '2025-01-15' },
+  { id: uuid(), orgId: 'u10', role: 'DevOps Engineer', type: 'new_position', justification: 'CI/CD pipeline ownership', replacingName: null, status: 'filled', requestedBy: 'u10', approvedBy: 'u6', createdAt: '2025-01-20' },
+  { id: uuid(), orgId: 'u9', role: 'React Developer', type: 'substitution', justification: 'Replacing departed team member', replacingName: 'John Doe', status: 'pending_approval', requestedBy: 'u9', approvedBy: null, createdAt: '2025-02-05' },
+  { id: uuid(), orgId: 'u7', role: 'Account Executive', type: 'new_position', justification: 'Territory expansion Q2', replacingName: null, status: 'draft', requestedBy: 'u7', approvedBy: null, createdAt: '2025-02-18' },
+  { id: uuid(), orgId: 'u6', role: 'Backend Engineer', type: 'substitution', justification: 'Replacing engineer moving to Platform team', replacingName: 'Alex Turner', status: 'approved', requestedBy: 'u6', approvedBy: 'u2', createdAt: '2025-02-12' },
+];
+
+export { orgNodes, budgets, proposals, actuals, requisitions };

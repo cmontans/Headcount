@@ -1,17 +1,22 @@
 import { useApp } from '../context/AppContext';
 
 export default function Dashboard() {
-  const { currentUser, currentUserOrgId, proposals, budgets, actuals, getDescendantIds, getNode, getActualCount, getHead } = useApp();
+  const { currentUser, currentUserOrgId, proposals, requisitions, budgets, actuals, getDescendantIds, getNode, getActualCount, getHead } = useApp();
   const scopeIds = getDescendantIds(currentUserOrgId);
 
   const scopeProposals = proposals.filter(p => scopeIds.includes(p.orgId));
   const scopeBudgets = budgets.filter(b => scopeIds.includes(b.orgId));
+  const scopeReqs = requisitions.filter(r => scopeIds.includes(r.orgId));
 
   const totalBudget = scopeBudgets.reduce((s, b) => s + b.budgetedHC, 0);
   const totalActuals = scopeIds.reduce((s, id) => s + getActualCount(id), 0);
   const totalPendingDelta = scopeProposals.filter(p => p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
   const pendingCount = scopeProposals.filter(p => p.status === 'pending_approval').length;
   const draftCount = scopeProposals.filter(p => p.status === 'draft').length;
+
+  const openReqs = scopeReqs.filter(r => r.status === 'open').length;
+  const pendingReqs = scopeReqs.filter(r => r.status === 'pending_approval').length;
+  const filledReqs = scopeReqs.filter(r => r.status === 'filled').length;
 
   const teamIds = scopeIds.filter(id =>
     budgets.some(b => b.orgId === id) || actuals.some(a => a.orgId === id)
@@ -53,6 +58,18 @@ export default function Dashboard() {
         <div className="kpi-card">
           <div className="kpi-value">{totalPendingDelta > 0 ? '+' : ''}{totalPendingDelta}</div>
           <div className="kpi-label">Pending Budget Impact</div>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-value">{openReqs}</div>
+          <div className="kpi-label">Open Requisitions</div>
+        </div>
+        <div className="kpi-card kpi-warn">
+          <div className="kpi-value">{pendingReqs}</div>
+          <div className="kpi-label">Pending Requisitions</div>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-value">{filledReqs}</div>
+          <div className="kpi-label">Filled Requisitions</div>
         </div>
       </div>
 

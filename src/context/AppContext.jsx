@@ -1,6 +1,6 @@
 import { createContext, useContext, useReducer, useCallback } from 'react';
 import { v4 as uuid } from 'uuid';
-import { orgNodes as seedOrg, budgets as seedBudgets, proposals as seedProposals, actuals as seedActuals } from '../data/seed';
+import { orgNodes as seedOrg, budgets as seedBudgets, proposals as seedProposals, actuals as seedActuals, requisitions as seedRequisitions } from '../data/seed';
 
 const AppContext = createContext();
 
@@ -13,6 +13,7 @@ const initialState = {
   budgets: seedBudgets,
   proposals: seedProposals,
   actuals: seedActuals,
+  requisitions: seedRequisitions,
 };
 
 function reducer(state, action) {
@@ -58,6 +59,26 @@ function reducer(state, action) {
       return { ...state, actuals: state.actuals.map(a => a.id === action.payload.id ? { ...a, ...action.payload } : a) };
     case 'DELETE_ACTUAL':
       return { ...state, actuals: state.actuals.filter(a => a.id !== action.payload) };
+
+    // --- Requisitions ---
+    case 'ADD_REQUISITION':
+      return { ...state, requisitions: [...state.requisitions, { ...action.payload, id: uuid(), status: 'draft', createdAt: new Date().toISOString().slice(0, 10) }] };
+    case 'UPDATE_REQUISITION':
+      return { ...state, requisitions: state.requisitions.map(r => r.id === action.payload.id ? { ...r, ...action.payload } : r) };
+    case 'DELETE_REQUISITION':
+      return { ...state, requisitions: state.requisitions.filter(r => r.id !== action.payload) };
+    case 'SUBMIT_REQUISITION':
+      return { ...state, requisitions: state.requisitions.map(r => r.id === action.payload ? { ...r, status: 'pending_approval' } : r) };
+    case 'APPROVE_REQUISITION':
+      return { ...state, requisitions: state.requisitions.map(r => r.id === action.payload.id ? { ...r, status: 'approved', approvedBy: action.payload.approvedBy } : r) };
+    case 'REJECT_REQUISITION':
+      return { ...state, requisitions: state.requisitions.map(r => r.id === action.payload.id ? { ...r, status: 'rejected', approvedBy: action.payload.rejectedBy } : r) };
+    case 'OPEN_REQUISITION':
+      return { ...state, requisitions: state.requisitions.map(r => r.id === action.payload ? { ...r, status: 'open' } : r) };
+    case 'FILL_REQUISITION':
+      return { ...state, requisitions: state.requisitions.map(r => r.id === action.payload ? { ...r, status: 'filled' } : r) };
+    case 'CANCEL_REQUISITION':
+      return { ...state, requisitions: state.requisitions.map(r => r.id === action.payload ? { ...r, status: 'cancelled' } : r) };
 
     // --- Org ---
     case 'ADD_ORG_NODE':

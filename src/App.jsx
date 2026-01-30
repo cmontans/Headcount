@@ -7,6 +7,7 @@ import Proposals from './pages/Proposals';
 import Approvals from './pages/Approvals';
 import Budget from './pages/Budget';
 import Actuals from './pages/Actuals';
+import Requisitions from './pages/Requisitions';
 import './App.css';
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="/approvals" element={<Approvals />} />
             <Route path="/budget" element={<Budget />} />
             <Route path="/actuals" element={<Actuals />} />
+            <Route path="/requisitions" element={<Requisitions />} />
           </Routes>
         </main>
       </BrowserRouter>
