@@ -34,11 +34,13 @@ function reducer(state, action) {
     case 'APPROVE_PROPOSAL': {
       const proposal = state.proposals.find(p => p.id === action.payload.id);
       if (!proposal) return state;
-      // Collect the target org and all its ancestors
+      // Collect orgs from the approver down to the requesting org
+      const approverOrg = action.payload.approvedBy;
       const affectedOrgIds = [];
       let current = proposal.orgId;
       while (current) {
         affectedOrgIds.push(current);
+        if (current === approverOrg) break;
         const node = state.orgNodes.find(n => n.id === current);
         current = node?.parentId || null;
       }
@@ -46,7 +48,7 @@ function reducer(state, action) {
         affectedOrgIds.includes(b.orgId) ? { ...b, budgetedHC: b.budgetedHC + proposal.delta } : b
       );
       const updatedProposals = state.proposals.map(p =>
-        p.id === action.payload.id ? { ...p, status: 'approved', approvedBy: action.payload.approvedBy } : p
+        p.id === action.payload.id ? { ...p, status: 'approved', approvedBy: approverOrg } : p
       );
       return { ...state, proposals: updatedProposals, budgets: updatedBudgets };
     }
