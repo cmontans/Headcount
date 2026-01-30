@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
 function OrgNode({ node, onEdit, onAdd, onDelete }) {
-  const { getChildren, actuals, proposals, budgets } = useApp();
+  const { getChildren, proposals, budgets, getActualCount } = useApp();
   const children = getChildren(node.id);
-  const actualCount = actuals.filter(a => a.orgId === node.id && a.status === 'active').length;
+  const actualCount = getActualCount(node.id);
   const pendingDelta = proposals.filter(p => p.orgId === node.id && p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
   const budget = budgets.find(b => b.orgId === node.id);
 

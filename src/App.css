@@ -128,6 +128,9 @@
 .badge-active { background: #dcfce7; color: #166534; }
 .badge-departed { background: #f1f5f9; color: #475569; }
 
+.row-head { background: #f8fafc; }
+.row-head td { color: var(--text-muted); font-style: italic; }
+
 .text-danger { color: var(--danger); font-weight: 600; }
 .text-success { color: var(--success); font-weight: 600; }
 

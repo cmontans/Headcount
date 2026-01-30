@@ -99,8 +99,14 @@ export function AppProvider({ children }) {
 
   const getNode = useCallback((id) => state.orgNodes.find(n => n.id === id), [state.orgNodes]);
 
+  // Actual headcount for an org unit: explicit actuals + 1 for the head of the unit
+  const getActualCount = useCallback((orgId) => {
+    const explicit = state.actuals.filter(a => a.orgId === orgId && a.status === 'active').length;
+    return explicit + 1; // +1 for the head/manager of this org unit
+  }, [state.actuals]);
+
   return (
-    <AppContext.Provider value={{ ...state, dispatch, getChildren, getDescendantIds, getParent, getNode }}>
+    <AppContext.Provider value={{ ...state, dispatch, getChildren, getDescendantIds, getParent, getNode, getActualCount }}>
       {children}
     </AppContext.Provider>
   );

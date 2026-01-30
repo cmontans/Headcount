@@ -2,12 +2,16 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
 export default function Actuals() {
-  const { currentUser, actuals, getDescendantIds, getNode, dispatch } = useApp();
+  const { currentUser, actuals, orgNodes, getDescendantIds, getNode, dispatch } = useApp();
   const [form, setForm] = useState(null);
   const [editId, setEditId] = useState(null);
-
   const scopeIds = getDescendantIds(currentUser.id);
   const visible = actuals.filter(a => scopeIds.includes(a.orgId));
+
+  // Org heads count as implicit actuals in their unit
+  const headRows = orgNodes
+    .filter(n => scopeIds.includes(n.id))
+    .map(n => ({ id: `head-${n.id}`, orgId: n.id, name: n.name, role: `${n.title} (Head)`, startDate: '—', status: 'active', isHead: true }));
 
   function openNew() {
     setForm({ orgId: currentUser.id, name: '', role: '', startDate: new Date().toISOString().slice(0, 10) });
@@ -86,23 +90,27 @@ export default function Actuals() {
           </tr>
         </thead>
         <tbody>
-          {visible.map(a => {
+          {[...headRows, ...visible].map(a => {
             const node = getNode(a.orgId);
             return (
-              <tr key={a.id}>
+              <tr key={a.id} className={a.isHead ? 'row-head' : ''}>
                 <td>{a.name}</td>
                 <td>{a.role}</td>
                 <td>{node?.title || a.orgId}</td>
                 <td>{a.startDate}</td>
                 <td><span className={`badge badge-${a.status}`}>{a.status}</span></td>
                 <td className="actions">
-                  <button className="btn btn-sm" onClick={() => openEdit(a)}>Edit</button>
-                  <button className="btn btn-sm btn-danger" onClick={() => dispatch({ type: 'DELETE_ACTUAL', payload: a.id })}>Remove</button>
+                  {!a.isHead && (
+                    <>
+                      <button className="btn btn-sm" onClick={() => openEdit(a)}>Edit</button>
+                      <button className="btn btn-sm btn-danger" onClick={() => dispatch({ type: 'DELETE_ACTUAL', payload: a.id })}>Remove</button>
+                    </>
+                  )}
                 </td>
               </tr>
             );
           })}
-          {visible.length === 0 && <tr><td colSpan="6" className="empty">No actuals in your scope</td></tr>}
+          {visible.length === 0 && headRows.length === 0 && <tr><td colSpan="6" className="empty">No actuals in your scope</td></tr>}
         </tbody>
       </table>
     </div>

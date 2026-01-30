@@ -1,15 +1,14 @@
 import { useApp } from '../context/AppContext';
 
 export default function Dashboard() {
-  const { currentUser, proposals, budgets, actuals, getDescendantIds, getNode } = useApp();
+  const { currentUser, proposals, budgets, actuals, getDescendantIds, getNode, getActualCount } = useApp();
   const scopeIds = getDescendantIds(currentUser.id);
 
   const scopeProposals = proposals.filter(p => scopeIds.includes(p.orgId));
   const scopeBudgets = budgets.filter(b => scopeIds.includes(b.orgId));
-  const scopeActuals = actuals.filter(a => scopeIds.includes(a.orgId) && a.status === 'active');
 
   const totalBudget = scopeBudgets.reduce((s, b) => s + b.budgetedHC, 0);
-  const totalActuals = scopeActuals.length;
+  const totalActuals = scopeIds.reduce((s, id) => s + getActualCount(id), 0);
   const totalPendingDelta = scopeProposals.filter(p => p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
   const totalDraftDelta = scopeProposals.filter(p => p.status === 'draft').reduce((s, p) => s + p.delta, 0);
   const pendingCount = scopeProposals.filter(p => p.status === 'pending_approval').length;
@@ -73,7 +72,7 @@ export default function Dashboard() {
             const node = getNode(id);
             const b = budgets.find(b => b.orgId === id);
             const bHC = b ? b.budgetedHC : 0;
-            const aCount = actuals.filter(a => a.orgId === id && a.status === 'active').length;
+            const aCount = getActualCount(id);
             const pendDelta = proposals.filter(p => p.orgId === id && p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
             const pendNum = proposals.filter(p => p.orgId === id && p.status === 'pending_approval').length;
             const open = bHC - aCount;

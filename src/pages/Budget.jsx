@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
 export default function Budget() {
-  const { currentUser, budgets, actuals, proposals, getDescendantIds, getNode, dispatch } = useApp();
+  const { currentUser, budgets, proposals, getDescendantIds, getNode, getActualCount, dispatch } = useApp();
   const [form, setForm] = useState(null);
   const [editId, setEditId] = useState(null);
 
@@ -87,7 +87,7 @@ export default function Budget() {
         <tbody>
           {visible.map(b => {
             const node = getNode(b.orgId);
-            const actualCount = actuals.filter(a => a.orgId === b.orgId && a.status === 'active').length;
+            const actualCount = getActualCount(b.orgId);
             const pendingDelta = proposals.filter(p => p.orgId === b.orgId && p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
             const open = b.budgetedHC - actualCount;
             return (
