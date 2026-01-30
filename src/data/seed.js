@@ -1,18 +1,17 @@
 import { v4 as uuid } from 'uuid';
 
-// --- Organization hierarchy (tree) ---
-// CEO -> VPs -> Directors -> Managers
+// --- Organization hierarchy (tree of positions, not people) ---
 const orgNodes = [
-  { id: 'u1', name: 'Alice Chen', title: 'CEO', parentId: null },
-  { id: 'u2', name: 'Bob Martinez', title: 'VP Engineering', parentId: 'u1' },
-  { id: 'u3', name: 'Carol Smith', title: 'VP Sales', parentId: 'u1' },
-  { id: 'u4', name: 'Dan Lee', title: 'VP Finance', parentId: 'u1' },
-  { id: 'u5', name: 'Eve Johnson', title: 'Dir. Frontend', parentId: 'u2' },
-  { id: 'u6', name: 'Frank Brown', title: 'Dir. Backend', parentId: 'u2' },
-  { id: 'u7', name: 'Grace Kim', title: 'Dir. Sales West', parentId: 'u3' },
-  { id: 'u8', name: 'Hank Davis', title: 'Dir. Sales East', parentId: 'u3' },
-  { id: 'u9', name: 'Ivy Wang', title: 'Mgr. UI Team', parentId: 'u5' },
-  { id: 'u10', name: 'Jake Patel', title: 'Mgr. Platform', parentId: 'u6' },
+  { id: 'u1', title: 'CEO', parentId: null },
+  { id: 'u2', title: 'VP Engineering', parentId: 'u1' },
+  { id: 'u3', title: 'VP Sales', parentId: 'u1' },
+  { id: 'u4', title: 'VP Finance', parentId: 'u1' },
+  { id: 'u5', title: 'Dir. Frontend', parentId: 'u2' },
+  { id: 'u6', title: 'Dir. Backend', parentId: 'u2' },
+  { id: 'u7', title: 'Dir. Sales West', parentId: 'u3' },
+  { id: 'u8', title: 'Dir. Sales East', parentId: 'u3' },
+  { id: 'u9', title: 'Mgr. UI Team', parentId: 'u5' },
+  { id: 'u10', title: 'Mgr. Platform', parentId: 'u6' },
 ];
 
 // --- Headcount budget per org node (annual) ---
@@ -39,18 +38,28 @@ const proposals = [
   { id: uuid(), orgId: 'u8', title: 'Reduce Sales East contractors', delta: -2, justification: 'Consolidating with in-house', status: 'draft', requestedBy: 'u8', approvedBy: null, createdAt: '2025-02-20' },
 ];
 
-// Actuals – people currently filling positions
+// Actuals – people currently filling positions. isHead marks the org unit head.
 const actuals = [
-  { id: uuid(), orgId: 'u9', name: 'Tom Harris', role: 'React Developer', startDate: '2024-06-01', status: 'active' },
-  { id: uuid(), orgId: 'u9', name: 'Sara Lopez', role: 'React Developer', startDate: '2024-09-15', status: 'active' },
-  { id: uuid(), orgId: 'u9', name: 'Mike Chen', role: 'React Developer', startDate: '2025-01-20', status: 'active' },
-  { id: uuid(), orgId: 'u10', name: 'Nina Petrov', role: 'Platform Engineer', startDate: '2024-03-01', status: 'active' },
-  { id: uuid(), orgId: 'u10', name: 'Oscar Reyes', role: 'DevOps Engineer', startDate: '2024-07-10', status: 'active' },
-  { id: uuid(), orgId: 'u10', name: 'Paula Grant', role: 'Platform Engineer', startDate: '2025-02-01', status: 'active' },
-  { id: uuid(), orgId: 'u6', name: 'Quinn Foster', role: 'Backend Engineer', startDate: '2023-11-01', status: 'active' },
-  { id: uuid(), orgId: 'u7', name: 'Rachel Adams', role: 'Account Executive', startDate: '2024-01-15', status: 'active' },
-  { id: uuid(), orgId: 'u7', name: 'Steve Ng', role: 'Account Executive', startDate: '2024-05-01', status: 'active' },
-  { id: uuid(), orgId: 'u8', name: 'Tina Brooks', role: 'Account Executive', startDate: '2024-08-01', status: 'active' },
+  { id: uuid(), orgId: 'u1', name: 'Alice Chen', role: 'CEO', startDate: '2020-01-01', status: 'active', isHead: true },
+  { id: uuid(), orgId: 'u2', name: 'Bob Martinez', role: 'VP Engineering', startDate: '2021-03-01', status: 'active', isHead: true },
+  { id: uuid(), orgId: 'u3', name: 'Carol Smith', role: 'VP Sales', startDate: '2021-06-01', status: 'active', isHead: true },
+  { id: uuid(), orgId: 'u4', name: 'Dan Lee', role: 'VP Finance', startDate: '2022-01-01', status: 'active', isHead: true },
+  { id: uuid(), orgId: 'u5', name: 'Eve Johnson', role: 'Dir. Frontend', startDate: '2022-04-01', status: 'active', isHead: true },
+  { id: uuid(), orgId: 'u6', name: 'Frank Brown', role: 'Dir. Backend', startDate: '2022-02-01', status: 'active', isHead: true },
+  { id: uuid(), orgId: 'u7', name: 'Grace Kim', role: 'Dir. Sales West', startDate: '2022-07-01', status: 'active', isHead: true },
+  { id: uuid(), orgId: 'u8', name: 'Hank Davis', role: 'Dir. Sales East', startDate: '2022-09-01', status: 'active', isHead: true },
+  { id: uuid(), orgId: 'u9', name: 'Ivy Wang', role: 'Mgr. UI Team', startDate: '2023-01-01', status: 'active', isHead: true },
+  { id: uuid(), orgId: 'u10', name: 'Jake Patel', role: 'Mgr. Platform', startDate: '2023-03-01', status: 'active', isHead: true },
+  { id: uuid(), orgId: 'u9', name: 'Tom Harris', role: 'React Developer', startDate: '2024-06-01', status: 'active', isHead: false },
+  { id: uuid(), orgId: 'u9', name: 'Sara Lopez', role: 'React Developer', startDate: '2024-09-15', status: 'active', isHead: false },
+  { id: uuid(), orgId: 'u9', name: 'Mike Chen', role: 'React Developer', startDate: '2025-01-20', status: 'active', isHead: false },
+  { id: uuid(), orgId: 'u10', name: 'Nina Petrov', role: 'Platform Engineer', startDate: '2024-03-01', status: 'active', isHead: false },
+  { id: uuid(), orgId: 'u10', name: 'Oscar Reyes', role: 'DevOps Engineer', startDate: '2024-07-10', status: 'active', isHead: false },
+  { id: uuid(), orgId: 'u10', name: 'Paula Grant', role: 'Platform Engineer', startDate: '2025-02-01', status: 'active', isHead: false },
+  { id: uuid(), orgId: 'u6', name: 'Quinn Foster', role: 'Backend Engineer', startDate: '2023-11-01', status: 'active', isHead: false },
+  { id: uuid(), orgId: 'u7', name: 'Rachel Adams', role: 'Account Executive', startDate: '2024-01-15', status: 'active', isHead: false },
+  { id: uuid(), orgId: 'u7', name: 'Steve Ng', role: 'Account Executive', startDate: '2024-05-01', status: 'active', isHead: false },
+  { id: uuid(), orgId: 'u8', name: 'Tina Brooks', role: 'Account Executive', startDate: '2024-08-01', status: 'active', isHead: false },
 ];
 
 export { orgNodes, budgets, proposals, actuals };

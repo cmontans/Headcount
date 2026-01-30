@@ -2,17 +2,22 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
 function OrgNode({ node, onEdit, onAdd, onDelete }) {
-  const { getChildren, proposals, budgets, getActualCount } = useApp();
+  const { getChildren, proposals, budgets, getActualCount, getHead } = useApp();
   const children = getChildren(node.id);
   const actualCount = getActualCount(node.id);
   const pendingDelta = proposals.filter(p => p.orgId === node.id && p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
   const budget = budgets.find(b => b.orgId === node.id);
+  const head = getHead(node.id);
 
   return (
     <div className="org-node">
       <div className="org-card">
-        <strong>{node.name}</strong>
-        <span className="org-title">{node.title}</span>
+        <strong>{node.title}</strong>
+        {head ? (
+          <span className="org-head-name">{head.name}</span>
+        ) : (
+          <span className="org-head-vacant">Vacant</span>
+        )}
         <div className="org-stats">
           {budget && <span title="Budget">B:{budget.budgetedHC}</span>}
           <span title="Actuals">A:{actualCount}</span>
@@ -35,10 +40,10 @@ function OrgNode({ node, onEdit, onAdd, onDelete }) {
   );
 }
 
-const emptyForm = { name: '', title: '', parentId: '' };
+const emptyForm = { title: '', parentId: '' };
 
 export default function OrgTree() {
-  const { orgNodes, getChildren, getDescendantIds, dispatch } = useApp();
+  const { orgNodes, getChildren, getDescendantIds, getHead, dispatch } = useApp();
   const root = orgNodes.find(n => n.parentId === null);
   const [form, setForm] = useState(null);
   const [editId, setEditId] = useState(null);
@@ -50,22 +55,21 @@ export default function OrgTree() {
   }
 
   function openEdit(node) {
-    setForm({ name: node.name, title: node.title, parentId: node.parentId || '' });
+    setForm({ title: node.title, parentId: node.parentId || '' });
     setEditId(node.id);
   }
 
   function save() {
-    if (!form.name || !form.title) return;
+    if (!form.title) return;
     if (editId) {
-      // Prevent making a node its own descendant
       const descIds = getDescendantIds(editId);
       if (form.parentId && descIds.includes(form.parentId)) {
         alert('Cannot move a node under its own descendant.');
         return;
       }
-      dispatch({ type: 'UPDATE_ORG_NODE', payload: { id: editId, name: form.name, title: form.title, parentId: form.parentId || null } });
+      dispatch({ type: 'UPDATE_ORG_NODE', payload: { id: editId, title: form.title, parentId: form.parentId || null } });
     } else {
-      dispatch({ type: 'ADD_ORG_NODE', payload: { name: form.name, title: form.title, parentId: form.parentId || null } });
+      dispatch({ type: 'ADD_ORG_NODE', payload: { title: form.title, parentId: form.parentId || null } });
     }
     setForm(null);
     setEditId(null);
@@ -81,11 +85,15 @@ export default function OrgTree() {
     setConfirmDelete(null);
   }
 
-  // For the parent dropdown, exclude the node itself and its descendants (when editing)
   function getParentOptions() {
     if (!editId) return orgNodes;
     const descIds = getDescendantIds(editId);
     return orgNodes.filter(n => !descIds.includes(n.id));
+  }
+
+  function orgLabel(n) {
+    const head = getHead(n.id);
+    return head ? `${n.title} (${head.name})` : n.title;
   }
 
   return (
@@ -103,9 +111,6 @@ export default function OrgTree() {
         <div className="modal-overlay" onClick={() => setForm(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>{editId ? 'Edit' : 'Add'} Position</h3>
-            <label>Name
-              <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Person's name" />
-            </label>
             <label>Title / Role
               <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="e.g. VP Engineering" />
             </label>
@@ -113,7 +118,7 @@ export default function OrgTree() {
               <select value={form.parentId || ''} onChange={e => setForm({ ...form, parentId: e.target.value || null })}>
                 <option value="">— None (root) —</option>
                 {getParentOptions().map(n => (
-                  <option key={n.id} value={n.id}>{n.name} — {n.title}</option>
+                  <option key={n.id} value={n.id}>{orgLabel(n)}</option>
                 ))}
               </select>
             </label>
@@ -130,12 +135,12 @@ export default function OrgTree() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>Delete Position</h3>
             <p>
-              Remove <strong>{confirmDelete.node.name}</strong> ({confirmDelete.node.title})?
+              Remove <strong>{confirmDelete.node.title}</strong>?
             </p>
             {confirmDelete.childCount > 0 && (
               <p className="delete-warning">
                 This position has {confirmDelete.childCount} direct report{confirmDelete.childCount > 1 ? 's' : ''}.
-                They will be reassigned to <strong>{orgNodes.find(n => n.id === confirmDelete.node.parentId)?.name || 'no parent'}</strong>.
+                They will be reassigned to <strong>{orgNodes.find(n => n.id === confirmDelete.node.parentId)?.title || 'no parent'}</strong>.
               </p>
             )}
             <div className="modal-actions">

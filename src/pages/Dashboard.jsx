@@ -1,8 +1,8 @@
 import { useApp } from '../context/AppContext';
 
 export default function Dashboard() {
-  const { currentUser, proposals, budgets, actuals, getDescendantIds, getNode, getActualCount } = useApp();
-  const scopeIds = getDescendantIds(currentUser.id);
+  const { currentUser, currentUserOrgId, proposals, budgets, actuals, getDescendantIds, getNode, getActualCount, getHead } = useApp();
+  const scopeIds = getDescendantIds(currentUserOrgId);
 
   const scopeProposals = proposals.filter(p => scopeIds.includes(p.orgId));
   const scopeBudgets = budgets.filter(b => scopeIds.includes(b.orgId));
@@ -10,7 +10,6 @@ export default function Dashboard() {
   const totalBudget = scopeBudgets.reduce((s, b) => s + b.budgetedHC, 0);
   const totalActuals = scopeIds.reduce((s, id) => s + getActualCount(id), 0);
   const totalPendingDelta = scopeProposals.filter(p => p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
-  const totalDraftDelta = scopeProposals.filter(p => p.status === 'draft').reduce((s, p) => s + p.delta, 0);
   const pendingCount = scopeProposals.filter(p => p.status === 'pending_approval').length;
   const draftCount = scopeProposals.filter(p => p.status === 'draft').length;
 
@@ -24,9 +23,11 @@ export default function Dashboard() {
     return '0';
   }
 
+  const orgNode = getNode(currentUserOrgId);
+
   return (
     <div className="page">
-      <h2>Dashboard — {currentUser.name} ({currentUser.title})</h2>
+      <h2>Dashboard — {currentUser?.name} ({orgNode?.title})</h2>
 
       <div className="kpi-grid">
         <div className="kpi-card">
@@ -60,6 +61,7 @@ export default function Dashboard() {
         <thead>
           <tr>
             <th>Team</th>
+            <th>Head</th>
             <th>Budget</th>
             <th>Actuals</th>
             <th>Open Positions</th>
@@ -70,6 +72,7 @@ export default function Dashboard() {
         <tbody>
           {teamIds.map(id => {
             const node = getNode(id);
+            const head = getHead(id);
             const b = budgets.find(b => b.orgId === id);
             const bHC = b ? b.budgetedHC : 0;
             const aCount = getActualCount(id);
@@ -78,7 +81,8 @@ export default function Dashboard() {
             const open = bHC - aCount;
             return (
               <tr key={id}>
-                <td>{node?.name} — {node?.title}</td>
+                <td>{node?.title}</td>
+                <td>{head?.name || <em>Vacant</em>}</td>
                 <td>{bHC}</td>
                 <td>{aCount}</td>
                 <td className={open < 0 ? 'text-danger' : open > 0 ? 'text-success' : ''}>{open > 0 ? '+' : ''}{open}</td>

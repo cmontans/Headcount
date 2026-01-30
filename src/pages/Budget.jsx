@@ -2,15 +2,15 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
 export default function Budget() {
-  const { currentUser, budgets, proposals, getDescendantIds, getNode, getActualCount, dispatch } = useApp();
+  const { currentUserOrgId, budgets, proposals, getDescendantIds, getNode, getHead, getActualCount, dispatch } = useApp();
   const [form, setForm] = useState(null);
   const [editId, setEditId] = useState(null);
 
-  const scopeIds = getDescendantIds(currentUser.id);
+  const scopeIds = getDescendantIds(currentUserOrgId);
   const visible = budgets.filter(b => scopeIds.includes(b.orgId));
 
   function openNew() {
-    setForm({ orgId: currentUser.id, year: 2025, budgetedHC: 0, notes: '' });
+    setForm({ orgId: currentUserOrgId, year: 2025, budgetedHC: 0, notes: '' });
     setEditId(null);
   }
 
@@ -50,7 +50,8 @@ export default function Budget() {
               <select value={form.orgId} onChange={e => setForm({ ...form, orgId: e.target.value })}>
                 {scopeIds.map(id => {
                   const n = getNode(id);
-                  return n ? <option key={id} value={id}>{n.name} — {n.title}</option> : null;
+                  const head = getHead(id);
+                  return n ? <option key={id} value={id}>{n.title}{head ? ` (${head.name})` : ''}</option> : null;
                 })}
               </select>
             </label>

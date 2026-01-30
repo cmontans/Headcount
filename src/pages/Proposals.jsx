@@ -4,15 +4,15 @@ import { useApp } from '../context/AppContext';
 const emptyForm = { title: '', delta: 1, justification: '', orgId: '' };
 
 export default function Proposals() {
-  const { currentUser, proposals, budgets, getDescendantIds, getNode, dispatch } = useApp();
+  const { currentUserOrgId, proposals, budgets, getDescendantIds, getNode, getHead, dispatch } = useApp();
   const [form, setForm] = useState(null);
   const [editId, setEditId] = useState(null);
 
-  const scopeIds = getDescendantIds(currentUser.id);
+  const scopeIds = getDescendantIds(currentUserOrgId);
   const visible = proposals.filter(p => scopeIds.includes(p.orgId));
 
   function openNew() {
-    setForm({ ...emptyForm, orgId: currentUser.id, requestedBy: currentUser.id });
+    setForm({ ...emptyForm, orgId: currentUserOrgId, requestedBy: currentUserOrgId });
     setEditId(null);
   }
 
@@ -63,7 +63,8 @@ export default function Proposals() {
               <select value={form.orgId} onChange={e => setForm({ ...form, orgId: e.target.value })}>
                 {scopeIds.map(id => {
                   const n = getNode(id);
-                  return n ? <option key={id} value={id}>{n.name} — {n.title}</option> : null;
+                  const head = getHead(id);
+                  return n ? <option key={id} value={id}>{n.title}{head ? ` (${head.name})` : ''}</option> : null;
                 })}
               </select>
             </label>
@@ -110,16 +111,16 @@ export default function Proposals() {
         <tbody>
           {visible.map(p => {
             const node = getNode(p.orgId);
-            const requestor = getNode(p.requestedBy);
-            const approver = p.approvedBy ? getNode(p.approvedBy) : null;
+            const requestorHead = getHead(p.requestedBy);
+            const approverHead = p.approvedBy ? getHead(p.approvedBy) : null;
             return (
               <tr key={p.id}>
                 <td>{node?.title || p.orgId}</td>
                 <td>{p.title}</td>
                 <td>{formatDelta(p.delta)}</td>
                 <td>{statusBadge(p.status)}</td>
-                <td>{requestor?.name || '—'}</td>
-                <td>{approver?.name || '—'}</td>
+                <td>{requestorHead?.name || '—'}</td>
+                <td>{approverHead?.name || '—'}</td>
                 <td>{p.createdAt}</td>
                 <td className="actions">
                   {p.status === 'draft' && (

@@ -4,8 +4,11 @@ import { orgNodes as seedOrg, budgets as seedBudgets, proposals as seedProposals
 
 const AppContext = createContext();
 
+// Current user is identified by the head actual of an org unit
+const initialHead = seedActuals.find(a => a.orgId === seedOrg[0].id && a.isHead);
+
 const initialState = {
-  currentUser: seedOrg[0], // default to CEO
+  currentUserId: initialHead?.id || null, // actual id of the acting user
   orgNodes: seedOrg,
   budgets: seedBudgets,
   proposals: seedProposals,
@@ -15,7 +18,7 @@ const initialState = {
 function reducer(state, action) {
   switch (action.type) {
     case 'SET_USER':
-      return { ...state, currentUser: action.payload };
+      return { ...state, currentUserId: action.payload };
 
     // --- Proposals (budget change requests) ---
     case 'ADD_PROPOSAL':
@@ -29,7 +32,6 @@ function reducer(state, action) {
     case 'APPROVE_PROPOSAL': {
       const proposal = state.proposals.find(p => p.id === action.payload.id);
       if (!proposal) return state;
-      // Apply delta to the matching budget
       const updatedBudgets = state.budgets.map(b =>
         b.orgId === proposal.orgId ? { ...b, budgetedHC: b.budgetedHC + proposal.delta } : b
       );
@@ -99,14 +101,34 @@ export function AppProvider({ children }) {
 
   const getNode = useCallback((id) => state.orgNodes.find(n => n.id === id), [state.orgNodes]);
 
-  // Actual headcount for an org unit: explicit actuals + 1 for the head of the unit
+  // Count active actuals for an org unit (heads are counted like anyone else)
   const getActualCount = useCallback((orgId) => {
-    const explicit = state.actuals.filter(a => a.orgId === orgId && a.status === 'active').length;
-    return explicit + 1; // +1 for the head/manager of this org unit
+    return state.actuals.filter(a => a.orgId === orgId && a.status === 'active').length;
   }, [state.actuals]);
 
+  // Get the head (person) of an org unit
+  const getHead = useCallback((orgId) => {
+    return state.actuals.find(a => a.orgId === orgId && a.isHead && a.status === 'active') || null;
+  }, [state.actuals]);
+
+  // Current user derived from currentUserId
+  const currentUser = state.actuals.find(a => a.id === state.currentUserId) || null;
+  // The org unit the current user heads
+  const currentUserOrgId = currentUser?.orgId || null;
+
   return (
-    <AppContext.Provider value={{ ...state, dispatch, getChildren, getDescendantIds, getParent, getNode, getActualCount }}>
+    <AppContext.Provider value={{
+      ...state,
+      currentUser,
+      currentUserOrgId,
+      dispatch,
+      getChildren,
+      getDescendantIds,
+      getParent,
+      getNode,
+      getActualCount,
+      getHead,
+    }}>
       {children}
     </AppContext.Provider>
   );

@@ -1,24 +1,24 @@
 import { useApp } from '../context/AppContext';
 
 export default function Approvals() {
-  const { currentUser, proposals, budgets, getChildren, getNode, dispatch } = useApp();
+  const { currentUserOrgId, proposals, budgets, getChildren, getNode, getHead, dispatch } = useApp();
 
-  const directReportIds = getChildren(currentUser.id).map(c => c.id);
+  const directReportIds = getChildren(currentUserOrgId).map(c => c.id);
 
   const pending = proposals.filter(p =>
     p.status === 'pending_approval' && directReportIds.includes(p.requestedBy)
   );
 
   const myPending = proposals.filter(p =>
-    p.status === 'pending_approval' && p.requestedBy === currentUser.id
+    p.status === 'pending_approval' && p.requestedBy === currentUserOrgId
   );
 
   function approve(id) {
-    dispatch({ type: 'APPROVE_PROPOSAL', payload: { id, approvedBy: currentUser.id } });
+    dispatch({ type: 'APPROVE_PROPOSAL', payload: { id, approvedBy: currentUserOrgId } });
   }
 
   function reject(id) {
-    dispatch({ type: 'REJECT_PROPOSAL', payload: { id, rejectedBy: currentUser.id } });
+    dispatch({ type: 'REJECT_PROPOSAL', payload: { id, rejectedBy: currentUserOrgId } });
   }
 
   function formatDelta(d) {
@@ -51,13 +51,13 @@ export default function Approvals() {
           </thead>
           <tbody>
             {pending.map(p => {
-              const requestor = getNode(p.requestedBy);
+              const requestorHead = getHead(p.requestedBy);
               const team = getNode(p.orgId);
               const budget = budgets.find(b => b.orgId === p.orgId);
               const currentHC = budget ? budget.budgetedHC : 0;
               return (
                 <tr key={p.id}>
-                  <td>{requestor?.name}</td>
+                  <td>{requestorHead?.name || '—'}</td>
                   <td>{team?.title}</td>
                   <td>{p.title}</td>
                   <td>{formatDelta(p.delta)}</td>
