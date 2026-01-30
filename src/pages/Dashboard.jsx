@@ -44,11 +44,11 @@ export default function Dashboard() {
         </div>
         <div className="kpi-card kpi-warn">
           <div className="kpi-value">{pendingCount}</div>
-          <div className="kpi-label">Pending Proposals</div>
+          <div className="kpi-label">Pending Budget Changes</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-value">{draftCount}</div>
-          <div className="kpi-label">Draft Proposals</div>
+          <div className="kpi-label">Draft Budget Changes</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-value">{totalPendingDelta > 0 ? '+' : ''}{totalPendingDelta}</div>
@@ -65,7 +65,7 @@ export default function Dashboard() {
             <th>Budget</th>
             <th>Actuals</th>
             <th>Open Positions</th>
-            <th>Pending Proposals</th>
+            <th>Pending Budget Changes</th>
             <th>Pending Impact</th>
           </tr>
         </thead>

@@ -27,7 +27,7 @@ const budgets = [
   { id: uuid(), orgId: 'u10', year: 2025, budgetedHC: 10, notes: 'Platform team budget' },
 ];
 
-// Proposals: requests to change the budget (delta = headcount change, positive or negative)
+// Budget Change Proposals: requests to change the budget (delta = headcount change, positive or negative)
 // status: draft | pending_approval | approved | rejected
 const proposals = [
   { id: uuid(), orgId: 'u9', title: 'Hire Senior React Developers', delta: 2, justification: 'New product launch', status: 'approved', requestedBy: 'u9', approvedBy: 'u5', createdAt: '2025-01-10' },

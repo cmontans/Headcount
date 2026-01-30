@@ -51,14 +51,14 @@ export default function Proposals() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>Headcount Proposals</h2>
-        <button className="btn btn-primary" onClick={openNew}>+ New Proposal</button>
+        <h2>Budget Change Proposals</h2>
+        <button className="btn btn-primary" onClick={openNew}>+ New Budget Change Proposal</button>
       </div>
 
       {form && (
         <div className="modal-overlay" onClick={() => setForm(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <h3>{editId ? 'Edit' : 'New'} Proposal</h3>
+            <h3>{editId ? 'Edit' : 'New'} Budget Change Proposal</h3>
             <label>Team / Org Unit
               <select value={form.orgId} onChange={e => setForm({ ...form, orgId: e.target.value })}>
                 {scopeIds.map(id => {
@@ -140,7 +140,7 @@ export default function Proposals() {
               </tr>
             );
           })}
-          {visible.length === 0 && <tr><td colSpan="8" className="empty">No proposals in your scope</td></tr>}
+          {visible.length === 0 && <tr><td colSpan="8" className="empty">No budget change proposals in your scope</td></tr>}
         </tbody>
       </table>
     </div>

@@ -31,9 +31,9 @@ export default function Approvals() {
     <div className="page">
       <h2>Approval Queue</h2>
 
-      <h3>Proposals Awaiting Your Approval</h3>
+      <h3>Budget Change Proposals Awaiting Your Approval</h3>
       {pending.length === 0 ? (
-        <p className="empty">No pending proposals from your direct reports.</p>
+        <p className="empty">No pending budget change proposals from your direct reports.</p>
       ) : (
         <table className="table">
           <thead>
@@ -76,9 +76,9 @@ export default function Approvals() {
         </table>
       )}
 
-      <h3 style={{ marginTop: '2rem' }}>Your Submitted Proposals (Pending)</h3>
+      <h3 style={{ marginTop: '2rem' }}>Your Submitted Budget Change Proposals (Pending)</h3>
       {myPending.length === 0 ? (
-        <p className="empty">You have no pending proposals.</p>
+        <p className="empty">You have no pending budget change proposals.</p>
       ) : (
         <table className="table">
           <thead>
