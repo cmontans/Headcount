@@ -13,6 +13,7 @@ export default function Navbar() {
         <NavLink to="/budget">Budget</NavLink>
         <NavLink to="/actuals">Actuals</NavLink>
         <NavLink to="/requisitions">Requisitions</NavLink>
+        <NavLink to="/audit-log">Audit Log</NavLink>
       </div>
       <UserSwitcher />
     </nav>

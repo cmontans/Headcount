@@ -14,6 +14,7 @@ const initialState = {
   proposals: seedProposals,
   actuals: seedActuals,
   requisitions: seedRequisitions,
+  auditLog: [],
 };
 
 function reducer(state, action) {
@@ -99,8 +100,50 @@ function reducer(state, action) {
   }
 }
 
+const AUDITED_ACTIONS = {
+  ADD_PROPOSAL: 'Created budget change proposal',
+  UPDATE_PROPOSAL: 'Updated budget change proposal',
+  DELETE_PROPOSAL: 'Deleted budget change proposal',
+  SUBMIT_PROPOSAL: 'Submitted budget change proposal for approval',
+  APPROVE_PROPOSAL: 'Approved budget change proposal',
+  REJECT_PROPOSAL: 'Rejected budget change proposal',
+  ADD_BUDGET: 'Created budget entry',
+  UPDATE_BUDGET: 'Updated budget entry',
+  DELETE_BUDGET: 'Deleted budget entry',
+  ADD_ACTUAL: 'Added employee',
+  UPDATE_ACTUAL: 'Updated employee record',
+  DELETE_ACTUAL: 'Deleted employee record',
+  ADD_REQUISITION: 'Created job requisition',
+  UPDATE_REQUISITION: 'Updated job requisition',
+  DELETE_REQUISITION: 'Deleted job requisition',
+  SUBMIT_REQUISITION: 'Submitted job requisition for approval',
+  APPROVE_REQUISITION: 'Approved job requisition',
+  REJECT_REQUISITION: 'Rejected job requisition',
+  OPEN_REQUISITION: 'Opened job requisition for candidates',
+  FILL_REQUISITION: 'Marked job requisition as filled',
+  CANCEL_REQUISITION: 'Cancelled job requisition',
+  ADD_ORG_NODE: 'Added organization unit',
+  UPDATE_ORG_NODE: 'Updated organization unit',
+  DELETE_ORG_NODE: 'Deleted organization unit',
+};
+
+function auditReducer(state, action) {
+  const newState = reducer(state, action);
+  const description = AUDITED_ACTIONS[action.type];
+  if (!description) return newState;
+  const entry = {
+    id: uuid(),
+    action: action.type,
+    description,
+    userId: state.currentUserId,
+    payload: action.payload,
+    timestamp: new Date().toISOString(),
+  };
+  return { ...newState, auditLog: [entry, ...newState.auditLog] };
+}
+
 export function AppProvider({ children }) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(auditReducer, initialState);
 
   const getChildren = useCallback((parentId) => state.orgNodes.filter(n => n.parentId === parentId), [state.orgNodes]);
 

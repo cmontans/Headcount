@@ -8,6 +8,7 @@ import Approvals from './pages/Approvals';
 import Budget from './pages/Budget';
 import Actuals from './pages/Actuals';
 import Requisitions from './pages/Requisitions';
+import AuditLog from './pages/AuditLog';
 import './App.css';
 
 export default function App() {
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="/budget" element={<Budget />} />
             <Route path="/actuals" element={<Actuals />} />
             <Route path="/requisitions" element={<Requisitions />} />
+            <Route path="/audit-log" element={<AuditLog />} />
           </Routes>
         </main>
       </BrowserRouter>
