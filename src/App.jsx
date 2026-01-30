@@ -13,7 +13,7 @@ import './App.css';
 export default function App() {
   return (
     <AppProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/Headcount">
         <Navbar />
         <main className="main-content">
           <Routes>
