@@ -52,6 +52,15 @@ function reducer(state, action) {
       return { ...state, orgNodes: [...state.orgNodes, { ...action.payload, id: uuid() }] };
     case 'UPDATE_ORG_NODE':
       return { ...state, orgNodes: state.orgNodes.map(n => n.id === action.payload.id ? { ...n, ...action.payload } : n) };
+    case 'DELETE_ORG_NODE': {
+      // Reparent children to the deleted node's parent, then remove the node
+      const target = state.orgNodes.find(n => n.id === action.payload);
+      if (!target) return state;
+      const updated = state.orgNodes
+        .map(n => n.parentId === target.id ? { ...n, parentId: target.parentId } : n)
+        .filter(n => n.id !== action.payload);
+      return { ...state, orgNodes: updated };
+    }
 
     default:
       return state;
