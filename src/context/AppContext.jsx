@@ -151,7 +151,78 @@ const AUDITED_ACTIONS = {
   DELETE_ORG_NODE: 'Deleted organization unit',
 };
 
+function buildDetail(state, action) {
+  const getOrgTitle = (id) => state.orgNodes.find(n => n.id === id)?.title || id;
+  const getActualName = (id) => state.actuals.find(a => a.id === id)?.name || id;
+
+  switch (action.type) {
+    case 'ADD_PROPOSAL':
+    case 'UPDATE_PROPOSAL':
+      return `"${action.payload.title}" (delta: ${action.payload.delta > 0 ? '+' : ''}${action.payload.delta}) for ${getOrgTitle(action.payload.orgId)}`;
+    case 'DELETE_PROPOSAL': {
+      const p = state.proposals.find(x => x.id === action.payload);
+      return p ? `"${p.title}" for ${getOrgTitle(p.orgId)}` : '';
+    }
+    case 'SUBMIT_PROPOSAL': {
+      const p = state.proposals.find(x => x.id === action.payload);
+      return p ? `"${p.title}" (delta: ${p.delta > 0 ? '+' : ''}${p.delta}) for ${getOrgTitle(p.orgId)}` : '';
+    }
+    case 'APPROVE_PROPOSAL':
+    case 'REJECT_PROPOSAL': {
+      const p = state.proposals.find(x => x.id === action.payload.id);
+      return p ? `"${p.title}" (delta: ${p.delta > 0 ? '+' : ''}${p.delta}) for ${getOrgTitle(p.orgId)}` : '';
+    }
+    case 'ESCALATE_PROPOSAL': {
+      const p = state.proposals.find(x => x.id === action.payload.id);
+      return p ? `"${p.title}" from ${getOrgTitle(p.requestedBy)} to ${getOrgTitle(action.payload.escalatedByOrg)}'s superior` : '';
+    }
+    case 'ADD_BUDGET':
+    case 'UPDATE_BUDGET':
+      return `${getOrgTitle(action.payload.orgId)}: budgetedHC = ${action.payload.budgetedHC}`;
+    case 'DELETE_BUDGET': {
+      const b = state.budgets.find(x => x.id === action.payload);
+      return b ? `${getOrgTitle(b.orgId)}` : '';
+    }
+    case 'ADD_ACTUAL':
+    case 'UPDATE_ACTUAL':
+      return `${action.payload.name} in ${getOrgTitle(action.payload.orgId)}${action.payload.isHead ? ' (head)' : ''}`;
+    case 'DELETE_ACTUAL': {
+      const a = state.actuals.find(x => x.id === action.payload);
+      return a ? `${a.name} from ${getOrgTitle(a.orgId)}` : '';
+    }
+    case 'ADD_REQUISITION':
+    case 'UPDATE_REQUISITION':
+      return `"${action.payload.role}" (${action.payload.type === 'new_position' ? 'new position' : 'substitution'}) for ${getOrgTitle(action.payload.orgId)}`;
+    case 'DELETE_REQUISITION': {
+      const r = state.requisitions.find(x => x.id === action.payload);
+      return r ? `"${r.role}" for ${getOrgTitle(r.orgId)}` : '';
+    }
+    case 'SUBMIT_REQUISITION':
+    case 'OPEN_REQUISITION':
+    case 'FILL_REQUISITION':
+    case 'CANCEL_REQUISITION': {
+      const r = state.requisitions.find(x => x.id === action.payload);
+      return r ? `"${r.role}" for ${getOrgTitle(r.orgId)}` : '';
+    }
+    case 'APPROVE_REQUISITION':
+    case 'REJECT_REQUISITION': {
+      const r = state.requisitions.find(x => x.id === action.payload.id);
+      return r ? `"${r.role}" (${r.type === 'new_position' ? 'new position' : 'substitution'}) for ${getOrgTitle(r.orgId)}` : '';
+    }
+    case 'ADD_ORG_NODE':
+    case 'UPDATE_ORG_NODE':
+      return `"${action.payload.title}"`;
+    case 'DELETE_ORG_NODE': {
+      const n = state.orgNodes.find(x => x.id === action.payload);
+      return n ? `"${n.title}"` : '';
+    }
+    default:
+      return '';
+  }
+}
+
 function auditReducer(state, action) {
+  const detail = AUDITED_ACTIONS[action.type] ? buildDetail(state, action) : '';
   const newState = reducer(state, action);
   const description = AUDITED_ACTIONS[action.type];
   if (!description) return newState;
@@ -159,8 +230,8 @@ function auditReducer(state, action) {
     id: uuid(),
     action: action.type,
     description,
+    detail,
     userId: state.currentUserId,
-    payload: action.payload,
     timestamp: new Date().toISOString(),
   };
   return { ...newState, auditLog: [entry, ...newState.auditLog] };

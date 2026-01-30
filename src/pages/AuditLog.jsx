@@ -47,6 +47,7 @@ export default function AuditLog() {
               <th>User</th>
               <th>Action</th>
               <th>Description</th>
+              <th>Details</th>
             </tr>
           </thead>
           <tbody>
@@ -56,6 +57,7 @@ export default function AuditLog() {
                 <td>{getUserName(entry.userId)}</td>
                 <td><code>{entry.action}</code></td>
                 <td>{entry.description}</td>
+                <td>{entry.detail}</td>
               </tr>
             ))}
           </tbody>
