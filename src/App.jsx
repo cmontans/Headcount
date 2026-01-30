@@ -9,6 +9,8 @@ import Budget from './pages/Budget';
 import Actuals from './pages/Actuals';
 import Requisitions from './pages/Requisitions';
 import AuditLog from './pages/AuditLog';
+import DataSync from './pages/DataSync';
+import UserGuide from './pages/UserGuide';
 import './App.css';
 
 export default function App() {
@@ -26,6 +28,8 @@ export default function App() {
             <Route path="/actuals" element={<Actuals />} />
             <Route path="/requisitions" element={<Requisitions />} />
             <Route path="/audit-log" element={<AuditLog />} />
+            <Route path="/data-sync" element={<DataSync />} />
+            <Route path="/guide" element={<UserGuide />} />
           </Routes>
         </main>
       </BrowserRouter>

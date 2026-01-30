@@ -293,3 +293,17 @@
   border-top: 2px solid var(--border);
   position: relative;
 }
+
+/* ---- User Guide ---- */
+.user-guide section { margin-bottom: 2rem; }
+.user-guide h3 { color: var(--primary); border-bottom: 2px solid var(--primary); padding-bottom: 0.3rem; margin-top: 2rem; }
+.user-guide h4 { margin-top: 1rem; margin-bottom: 0.5rem; }
+.user-guide ol, .user-guide ul { margin-left: 1.5rem; margin-bottom: 0.75rem; }
+.user-guide li { margin-bottom: 0.3rem; line-height: 1.6; }
+.user-guide p { line-height: 1.6; margin-bottom: 0.75rem; }
+.guide-toc { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2rem; }
+.guide-toc h3 { border: none; margin-top: 0; }
+.guide-toc a { color: var(--primary); text-decoration: none; }
+.guide-toc a:hover { text-decoration: underline; }
+.sync-guide { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
+.sync-guide h4 { margin-top: 1rem; }

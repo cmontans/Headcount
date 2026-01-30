@@ -14,6 +14,8 @@ export default function Navbar() {
         <NavLink to="/actuals">Actuals</NavLink>
         <NavLink to="/requisitions">Requisitions</NavLink>
         <NavLink to="/audit-log">Audit Log</NavLink>
+        <NavLink to="/data-sync">Data Sync</NavLink>
+        <NavLink to="/guide">Guide</NavLink>
       </div>
       <UserSwitcher />
     </nav>

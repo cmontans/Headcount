@@ -104,6 +104,18 @@ function reducer(state, action) {
     case 'CANCEL_REQUISITION':
       return { ...state, requisitions: state.requisitions.map(r => r.id === action.payload ? { ...r, status: 'cancelled' } : r) };
 
+    // --- Bulk Import ---
+    case 'IMPORT_ORG_NODES':
+      return { ...state, orgNodes: action.payload };
+    case 'IMPORT_BUDGETS':
+      return { ...state, budgets: action.payload };
+    case 'IMPORT_ACTUALS':
+      return { ...state, actuals: action.payload };
+    case 'IMPORT_PROPOSALS':
+      return { ...state, proposals: action.payload };
+    case 'IMPORT_REQUISITIONS':
+      return { ...state, requisitions: action.payload };
+
     // --- Org ---
     case 'ADD_ORG_NODE':
       return { ...state, orgNodes: [...state.orgNodes, { ...action.payload, id: uuid() }] };
@@ -146,6 +158,11 @@ const AUDITED_ACTIONS = {
   OPEN_REQUISITION: 'Opened job requisition for candidates',
   FILL_REQUISITION: 'Marked job requisition as filled',
   CANCEL_REQUISITION: 'Cancelled job requisition',
+  IMPORT_ORG_NODES: 'Imported organization structure from CSV',
+  IMPORT_BUDGETS: 'Imported budgets from CSV',
+  IMPORT_ACTUALS: 'Imported actuals from CSV',
+  IMPORT_PROPOSALS: 'Imported proposals from CSV',
+  IMPORT_REQUISITIONS: 'Imported requisitions from CSV',
   ADD_ORG_NODE: 'Added organization unit',
   UPDATE_ORG_NODE: 'Updated organization unit',
   DELETE_ORG_NODE: 'Deleted organization unit',
@@ -216,6 +233,16 @@ function buildDetail(state, action) {
       const n = state.orgNodes.find(x => x.id === action.payload);
       return n ? `"${n.title}"` : '';
     }
+    case 'IMPORT_ORG_NODES':
+      return `${action.payload.length} organization units`;
+    case 'IMPORT_BUDGETS':
+      return `${action.payload.length} budget entries`;
+    case 'IMPORT_ACTUALS':
+      return `${action.payload.length} employee records`;
+    case 'IMPORT_PROPOSALS':
+      return `${action.payload.length} proposals`;
+    case 'IMPORT_REQUISITIONS':
+      return `${action.payload.length} requisitions`;
     default:
       return '';
   }
