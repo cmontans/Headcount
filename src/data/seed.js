@@ -28,13 +28,15 @@ const budgets = [
   { id: uuid(), orgId: 'u10', year: 2025, budgetedHC: 10, notes: 'Platform team budget' },
 ];
 
-// status: draft | pending_approval | approved | rejected | filled
-const requirements = [
-  { id: uuid(), orgId: 'u9', title: 'Senior React Developer', count: 2, justification: 'New product launch', status: 'approved', requestedBy: 'u9', approvedBy: 'u5', createdAt: '2025-01-10' },
-  { id: uuid(), orgId: 'u9', title: 'UX Designer', count: 1, justification: 'Improve design system', status: 'pending_approval', requestedBy: 'u9', approvedBy: null, createdAt: '2025-02-01' },
-  { id: uuid(), orgId: 'u10', title: 'DevOps Engineer', count: 1, justification: 'CI/CD improvements', status: 'approved', requestedBy: 'u10', approvedBy: 'u6', createdAt: '2025-01-15' },
-  { id: uuid(), orgId: 'u6', title: 'Staff Backend Engineer', count: 1, justification: 'Tech lead for new service', status: 'pending_approval', requestedBy: 'u6', approvedBy: null, createdAt: '2025-02-10' },
-  { id: uuid(), orgId: 'u7', title: 'Account Executive', count: 3, justification: 'Q2 expansion', status: 'draft', requestedBy: 'u7', approvedBy: null, createdAt: '2025-02-15' },
+// Proposals: requests to change the budget (delta = headcount change, positive or negative)
+// status: draft | pending_approval | approved | rejected
+const proposals = [
+  { id: uuid(), orgId: 'u9', title: 'Hire Senior React Developers', delta: 2, justification: 'New product launch', status: 'approved', requestedBy: 'u9', approvedBy: 'u5', createdAt: '2025-01-10' },
+  { id: uuid(), orgId: 'u9', title: 'Add UX Designer', delta: 1, justification: 'Improve design system', status: 'pending_approval', requestedBy: 'u9', approvedBy: null, createdAt: '2025-02-01' },
+  { id: uuid(), orgId: 'u10', title: 'Add DevOps Engineer', delta: 1, justification: 'CI/CD improvements', status: 'approved', requestedBy: 'u10', approvedBy: 'u6', createdAt: '2025-01-15' },
+  { id: uuid(), orgId: 'u6', title: 'Add Staff Backend Engineer', delta: 1, justification: 'Tech lead for new service', status: 'pending_approval', requestedBy: 'u6', approvedBy: null, createdAt: '2025-02-10' },
+  { id: uuid(), orgId: 'u7', title: 'Expand Account Executive team', delta: 3, justification: 'Q2 expansion', status: 'draft', requestedBy: 'u7', approvedBy: null, createdAt: '2025-02-15' },
+  { id: uuid(), orgId: 'u8', title: 'Reduce Sales East contractors', delta: -2, justification: 'Consolidating with in-house', status: 'draft', requestedBy: 'u8', approvedBy: null, createdAt: '2025-02-20' },
 ];
 
 // Actuals – people currently filling positions
@@ -51,4 +53,4 @@ const actuals = [
   { id: uuid(), orgId: 'u8', name: 'Tina Brooks', role: 'Account Executive', startDate: '2024-08-01', status: 'active' },
 ];
 
-export { orgNodes, budgets, requirements, actuals };
+export { orgNodes, budgets, proposals, actuals };

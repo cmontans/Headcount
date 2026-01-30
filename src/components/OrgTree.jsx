@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
 function OrgNode({ node, onEdit, onAdd, onDelete }) {
-  const { getChildren, actuals, requirements, budgets } = useApp();
+  const { getChildren, actuals, proposals, budgets } = useApp();
   const children = getChildren(node.id);
   const actualCount = actuals.filter(a => a.orgId === node.id && a.status === 'active').length;
-  const approvedReqs = requirements.filter(r => r.orgId === node.id && r.status === 'approved').reduce((s, r) => s + r.count, 0);
+  const pendingDelta = proposals.filter(p => p.orgId === node.id && p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
   const budget = budgets.find(b => b.orgId === node.id);
 
   return (
@@ -16,7 +16,7 @@ function OrgNode({ node, onEdit, onAdd, onDelete }) {
         <div className="org-stats">
           {budget && <span title="Budget">B:{budget.budgetedHC}</span>}
           <span title="Actuals">A:{actualCount}</span>
-          <span title="Approved reqs">R:{approvedReqs}</span>
+          {pendingDelta !== 0 && <span title="Pending budget change">P:{pendingDelta > 0 ? '+' : ''}{pendingDelta}</span>}
         </div>
         <div className="org-card-actions">
           <button className="btn-icon" title="Edit" onClick={() => onEdit(node)}>&#9998;</button>

@@ -1,23 +1,29 @@
 import { useApp } from '../context/AppContext';
 
 export default function Dashboard() {
-  const { currentUser, requirements, budgets, actuals, getDescendantIds, getNode } = useApp();
+  const { currentUser, proposals, budgets, actuals, getDescendantIds, getNode } = useApp();
   const scopeIds = getDescendantIds(currentUser.id);
 
-  const scopeReqs = requirements.filter(r => scopeIds.includes(r.orgId));
+  const scopeProposals = proposals.filter(p => scopeIds.includes(p.orgId));
   const scopeBudgets = budgets.filter(b => scopeIds.includes(b.orgId));
   const scopeActuals = actuals.filter(a => scopeIds.includes(a.orgId) && a.status === 'active');
 
   const totalBudget = scopeBudgets.reduce((s, b) => s + b.budgetedHC, 0);
   const totalActuals = scopeActuals.length;
-  const totalApproved = scopeReqs.filter(r => r.status === 'approved').reduce((s, r) => s + r.count, 0);
-  const totalPending = scopeReqs.filter(r => r.status === 'pending_approval').reduce((s, r) => s + r.count, 0);
-  const totalDraft = scopeReqs.filter(r => r.status === 'draft').reduce((s, r) => s + r.count, 0);
+  const totalPendingDelta = scopeProposals.filter(p => p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
+  const totalDraftDelta = scopeProposals.filter(p => p.status === 'draft').reduce((s, p) => s + p.delta, 0);
+  const pendingCount = scopeProposals.filter(p => p.status === 'pending_approval').length;
+  const draftCount = scopeProposals.filter(p => p.status === 'draft').length;
 
-  // Per-team breakdown
-  const teamIds = scopeIds.filter(id => {
-    return budgets.some(b => b.orgId === id) || actuals.some(a => a.orgId === id);
-  });
+  const teamIds = scopeIds.filter(id =>
+    budgets.some(b => b.orgId === id) || actuals.some(a => a.orgId === id)
+  );
+
+  function formatDelta(d) {
+    if (d > 0) return <span className="text-success">+{d}</span>;
+    if (d < 0) return <span className="text-danger">{d}</span>;
+    return '0';
+  }
 
   return (
     <div className="page">
@@ -32,21 +38,21 @@ export default function Dashboard() {
           <div className="kpi-value">{totalActuals}</div>
           <div className="kpi-label">Current Actuals</div>
         </div>
-        <div className="kpi-card">
-          <div className="kpi-value">{totalApproved}</div>
-          <div className="kpi-label">Approved Reqs</div>
+        <div className="kpi-card" style={{ background: (totalBudget - totalActuals) < 0 ? '#fee' : '#efe' }}>
+          <div className="kpi-value">{totalBudget - totalActuals}</div>
+          <div className="kpi-label">Open Positions</div>
         </div>
         <div className="kpi-card kpi-warn">
-          <div className="kpi-value">{totalPending}</div>
-          <div className="kpi-label">Pending Approval</div>
+          <div className="kpi-value">{pendingCount}</div>
+          <div className="kpi-label">Pending Proposals</div>
         </div>
         <div className="kpi-card">
-          <div className="kpi-value">{totalDraft}</div>
-          <div className="kpi-label">Drafts</div>
+          <div className="kpi-value">{draftCount}</div>
+          <div className="kpi-label">Draft Proposals</div>
         </div>
-        <div className="kpi-card" style={{ background: (totalBudget - totalActuals - totalApproved) < 0 ? '#fee' : '#efe' }}>
-          <div className="kpi-value">{totalBudget - totalActuals - totalApproved}</div>
-          <div className="kpi-label">Remaining Capacity</div>
+        <div className="kpi-card">
+          <div className="kpi-value">{totalPendingDelta > 0 ? '+' : ''}{totalPendingDelta}</div>
+          <div className="kpi-label">Pending Budget Impact</div>
         </div>
       </div>
 
@@ -57,9 +63,9 @@ export default function Dashboard() {
             <th>Team</th>
             <th>Budget</th>
             <th>Actuals</th>
-            <th>Approved Reqs</th>
-            <th>Pending</th>
-            <th>Remaining</th>
+            <th>Open Positions</th>
+            <th>Pending Proposals</th>
+            <th>Pending Impact</th>
           </tr>
         </thead>
         <tbody>
@@ -68,17 +74,17 @@ export default function Dashboard() {
             const b = budgets.find(b => b.orgId === id);
             const bHC = b ? b.budgetedHC : 0;
             const aCount = actuals.filter(a => a.orgId === id && a.status === 'active').length;
-            const appr = requirements.filter(r => r.orgId === id && r.status === 'approved').reduce((s, r) => s + r.count, 0);
-            const pend = requirements.filter(r => r.orgId === id && r.status === 'pending_approval').reduce((s, r) => s + r.count, 0);
-            const rem = bHC - aCount - appr;
+            const pendDelta = proposals.filter(p => p.orgId === id && p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
+            const pendNum = proposals.filter(p => p.orgId === id && p.status === 'pending_approval').length;
+            const open = bHC - aCount;
             return (
               <tr key={id}>
                 <td>{node?.name} — {node?.title}</td>
                 <td>{bHC}</td>
                 <td>{aCount}</td>
-                <td>{appr}</td>
-                <td>{pend}</td>
-                <td className={rem < 0 ? 'text-danger' : rem > 0 ? 'text-success' : ''}>{rem > 0 ? '+' : ''}{rem}</td>
+                <td className={open < 0 ? 'text-danger' : open > 0 ? 'text-success' : ''}>{open > 0 ? '+' : ''}{open}</td>
+                <td>{pendNum}</td>
+                <td>{formatDelta(pendDelta)}</td>
               </tr>
             );
           })}

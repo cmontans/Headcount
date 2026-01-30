@@ -1,6 +1,6 @@
 import { createContext, useContext, useReducer, useCallback } from 'react';
 import { v4 as uuid } from 'uuid';
-import { orgNodes as seedOrg, budgets as seedBudgets, requirements as seedReqs, actuals as seedActuals } from '../data/seed';
+import { orgNodes as seedOrg, budgets as seedBudgets, proposals as seedProposals, actuals as seedActuals } from '../data/seed';
 
 const AppContext = createContext();
 
@@ -8,7 +8,7 @@ const initialState = {
   currentUser: seedOrg[0], // default to CEO
   orgNodes: seedOrg,
   budgets: seedBudgets,
-  requirements: seedReqs,
+  proposals: seedProposals,
   actuals: seedActuals,
 };
 
@@ -17,19 +17,29 @@ function reducer(state, action) {
     case 'SET_USER':
       return { ...state, currentUser: action.payload };
 
-    // --- Requirements ---
-    case 'ADD_REQUIREMENT':
-      return { ...state, requirements: [...state.requirements, { ...action.payload, id: uuid(), status: 'draft', createdAt: new Date().toISOString().slice(0, 10) }] };
-    case 'UPDATE_REQUIREMENT':
-      return { ...state, requirements: state.requirements.map(r => r.id === action.payload.id ? { ...r, ...action.payload } : r) };
-    case 'DELETE_REQUIREMENT':
-      return { ...state, requirements: state.requirements.filter(r => r.id !== action.payload) };
-    case 'SUBMIT_REQUIREMENT':
-      return { ...state, requirements: state.requirements.map(r => r.id === action.payload ? { ...r, status: 'pending_approval' } : r) };
-    case 'APPROVE_REQUIREMENT':
-      return { ...state, requirements: state.requirements.map(r => r.id === action.payload.id ? { ...r, status: 'approved', approvedBy: action.payload.approvedBy } : r) };
-    case 'REJECT_REQUIREMENT':
-      return { ...state, requirements: state.requirements.map(r => r.id === action.payload.id ? { ...r, status: 'rejected', approvedBy: action.payload.rejectedBy } : r) };
+    // --- Proposals (budget change requests) ---
+    case 'ADD_PROPOSAL':
+      return { ...state, proposals: [...state.proposals, { ...action.payload, id: uuid(), status: 'draft', createdAt: new Date().toISOString().slice(0, 10) }] };
+    case 'UPDATE_PROPOSAL':
+      return { ...state, proposals: state.proposals.map(p => p.id === action.payload.id ? { ...p, ...action.payload } : p) };
+    case 'DELETE_PROPOSAL':
+      return { ...state, proposals: state.proposals.filter(p => p.id !== action.payload) };
+    case 'SUBMIT_PROPOSAL':
+      return { ...state, proposals: state.proposals.map(p => p.id === action.payload ? { ...p, status: 'pending_approval' } : p) };
+    case 'APPROVE_PROPOSAL': {
+      const proposal = state.proposals.find(p => p.id === action.payload.id);
+      if (!proposal) return state;
+      // Apply delta to the matching budget
+      const updatedBudgets = state.budgets.map(b =>
+        b.orgId === proposal.orgId ? { ...b, budgetedHC: b.budgetedHC + proposal.delta } : b
+      );
+      const updatedProposals = state.proposals.map(p =>
+        p.id === action.payload.id ? { ...p, status: 'approved', approvedBy: action.payload.approvedBy } : p
+      );
+      return { ...state, proposals: updatedProposals, budgets: updatedBudgets };
+    }
+    case 'REJECT_PROPOSAL':
+      return { ...state, proposals: state.proposals.map(p => p.id === action.payload.id ? { ...p, status: 'rejected', approvedBy: action.payload.rejectedBy } : p) };
 
     // --- Budgets ---
     case 'ADD_BUDGET':
@@ -53,7 +63,6 @@ function reducer(state, action) {
     case 'UPDATE_ORG_NODE':
       return { ...state, orgNodes: state.orgNodes.map(n => n.id === action.payload.id ? { ...n, ...action.payload } : n) };
     case 'DELETE_ORG_NODE': {
-      // Reparent children to the deleted node's parent, then remove the node
       const target = state.orgNodes.find(n => n.id === action.payload);
       if (!target) return state;
       const updated = state.orgNodes
@@ -70,10 +79,8 @@ function reducer(state, action) {
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  // Helper: get direct children of an org node
   const getChildren = useCallback((parentId) => state.orgNodes.filter(n => n.parentId === parentId), [state.orgNodes]);
 
-  // Helper: get all descendant ids (inclusive)
   const getDescendantIds = useCallback((nodeId) => {
     const ids = [nodeId];
     const queue = [nodeId];
@@ -85,7 +92,6 @@ export function AppProvider({ children }) {
     return ids;
   }, [state.orgNodes]);
 
-  // Helper: get parent (immediate superior) of a node
   const getParent = useCallback((nodeId) => {
     const node = state.orgNodes.find(n => n.id === nodeId);
     return node ? state.orgNodes.find(n => n.id === node.parentId) || null : null;

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
 export default function Budget() {
-  const { currentUser, budgets, actuals, requirements, getDescendantIds, getNode, dispatch } = useApp();
+  const { currentUser, budgets, actuals, proposals, getDescendantIds, getNode, dispatch } = useApp();
   const [form, setForm] = useState(null);
   const [editId, setEditId] = useState(null);
 
@@ -27,6 +27,12 @@ export default function Budget() {
     }
     setForm(null);
     setEditId(null);
+  }
+
+  function formatDelta(d) {
+    if (d > 0) return <span className="text-success">+{d}</span>;
+    if (d < 0) return <span className="text-danger">{d}</span>;
+    return '0';
   }
 
   return (
@@ -72,8 +78,8 @@ export default function Budget() {
             <th>Year</th>
             <th>Budgeted HC</th>
             <th>Current Actuals</th>
-            <th>Approved Reqs</th>
-            <th>Variance</th>
+            <th>Open Positions</th>
+            <th>Pending Impact</th>
             <th>Notes</th>
             <th>Actions</th>
           </tr>
@@ -82,16 +88,16 @@ export default function Budget() {
           {visible.map(b => {
             const node = getNode(b.orgId);
             const actualCount = actuals.filter(a => a.orgId === b.orgId && a.status === 'active').length;
-            const approvedReqs = requirements.filter(r => r.orgId === b.orgId && r.status === 'approved').reduce((s, r) => s + r.count, 0);
-            const variance = b.budgetedHC - actualCount - approvedReqs;
+            const pendingDelta = proposals.filter(p => p.orgId === b.orgId && p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
+            const open = b.budgetedHC - actualCount;
             return (
               <tr key={b.id}>
                 <td>{node?.title || b.orgId}</td>
                 <td>{b.year}</td>
                 <td>{b.budgetedHC}</td>
                 <td>{actualCount}</td>
-                <td>{approvedReqs}</td>
-                <td className={variance < 0 ? 'text-danger' : variance > 0 ? 'text-success' : ''}>{variance > 0 ? '+' : ''}{variance}</td>
+                <td className={open < 0 ? 'text-danger' : open > 0 ? 'text-success' : ''}>{open > 0 ? '+' : ''}{open}</td>
+                <td>{formatDelta(pendingDelta)}</td>
                 <td>{b.notes}</td>
                 <td className="actions">
                   <button className="btn btn-sm" onClick={() => openEdit(b)}>Edit</button>

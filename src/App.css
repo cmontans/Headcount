@@ -188,6 +188,20 @@
 .modal textarea { min-height: 70px; resize: vertical; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
 
+.field-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.budget-preview {
+  padding: 0.5rem 0.75rem;
+  background: #f0f9ff;
+  border-radius: var(--radius);
+  font-size: 0.82rem;
+  color: #1e40af;
+  margin-bottom: 0.75rem;
+}
+
 /* ---- Org Tree ---- */
 .org-tree { display: flex; justify-content: center; padding: 1rem 0; overflow-x: auto; }
 .org-node { display: flex; flex-direction: column; align-items: center; }

@@ -1,65 +1,73 @@
 import { useApp } from '../context/AppContext';
 
 export default function Approvals() {
-  const { currentUser, requirements, getChildren, getNode, dispatch } = useApp();
+  const { currentUser, proposals, budgets, getChildren, getNode, dispatch } = useApp();
 
-  // Current user can approve requests from their direct reports
   const directReportIds = getChildren(currentUser.id).map(c => c.id);
 
-  // Also include requests from the current user's own node that need approval from their parent
-  // The approver sees pending requests from their direct reports
-  const pending = requirements.filter(r =>
-    r.status === 'pending_approval' && directReportIds.includes(r.requestedBy)
+  const pending = proposals.filter(p =>
+    p.status === 'pending_approval' && directReportIds.includes(p.requestedBy)
   );
 
-  // Also show requests where the current user themselves requested and it's pending (read-only)
-  const myPending = requirements.filter(r =>
-    r.status === 'pending_approval' && r.requestedBy === currentUser.id
+  const myPending = proposals.filter(p =>
+    p.status === 'pending_approval' && p.requestedBy === currentUser.id
   );
 
   function approve(id) {
-    dispatch({ type: 'APPROVE_REQUIREMENT', payload: { id, approvedBy: currentUser.id } });
+    dispatch({ type: 'APPROVE_PROPOSAL', payload: { id, approvedBy: currentUser.id } });
   }
 
   function reject(id) {
-    dispatch({ type: 'REJECT_REQUIREMENT', payload: { id, rejectedBy: currentUser.id } });
+    dispatch({ type: 'REJECT_PROPOSAL', payload: { id, rejectedBy: currentUser.id } });
+  }
+
+  function formatDelta(d) {
+    if (d > 0) return <span className="text-success">+{d}</span>;
+    if (d < 0) return <span className="text-danger">{d}</span>;
+    return <span>0</span>;
   }
 
   return (
     <div className="page">
       <h2>Approval Queue</h2>
 
-      <h3>Requests Awaiting Your Approval</h3>
+      <h3>Proposals Awaiting Your Approval</h3>
       {pending.length === 0 ? (
-        <p className="empty">No pending requests from your direct reports.</p>
+        <p className="empty">No pending proposals from your direct reports.</p>
       ) : (
         <table className="table">
           <thead>
             <tr>
               <th>Requested By</th>
               <th>Team</th>
-              <th>Position</th>
-              <th>Count</th>
+              <th>Proposal</th>
+              <th>Delta</th>
+              <th>Current Budget</th>
+              <th>After Approval</th>
               <th>Justification</th>
               <th>Date</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {pending.map(r => {
-              const requestor = getNode(r.requestedBy);
-              const team = getNode(r.orgId);
+            {pending.map(p => {
+              const requestor = getNode(p.requestedBy);
+              const team = getNode(p.orgId);
+              const budget = budgets.find(b => b.orgId === p.orgId);
+              const currentHC = budget ? budget.budgetedHC : 0;
               return (
-                <tr key={r.id}>
+                <tr key={p.id}>
                   <td>{requestor?.name}</td>
                   <td>{team?.title}</td>
-                  <td>{r.title}</td>
-                  <td>{r.count}</td>
-                  <td>{r.justification}</td>
-                  <td>{r.createdAt}</td>
+                  <td>{p.title}</td>
+                  <td>{formatDelta(p.delta)}</td>
+                  <td>{currentHC}</td>
+                  <td><strong>{currentHC + p.delta}</strong></td>
+                  <td>{p.justification}</td>
+                  <td>{p.createdAt}</td>
                   <td className="actions">
-                    <button className="btn btn-sm btn-success" onClick={() => approve(r.id)}>Approve</button>
-                    <button className="btn btn-sm btn-danger" onClick={() => reject(r.id)}>Reject</button>
+                    <button className="btn btn-sm btn-success" onClick={() => approve(p.id)}>Approve</button>
+                    <button className="btn btn-sm btn-danger" onClick={() => reject(p.id)}>Reject</button>
                   </td>
                 </tr>
               );
@@ -68,31 +76,31 @@ export default function Approvals() {
         </table>
       )}
 
-      <h3 style={{ marginTop: '2rem' }}>Your Submitted Requests (Pending)</h3>
+      <h3 style={{ marginTop: '2rem' }}>Your Submitted Proposals (Pending)</h3>
       {myPending.length === 0 ? (
-        <p className="empty">You have no pending submissions.</p>
+        <p className="empty">You have no pending proposals.</p>
       ) : (
         <table className="table">
           <thead>
             <tr>
               <th>Team</th>
-              <th>Position</th>
-              <th>Count</th>
+              <th>Proposal</th>
+              <th>Delta</th>
               <th>Justification</th>
               <th>Date</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            {myPending.map(r => {
-              const team = getNode(r.orgId);
+            {myPending.map(p => {
+              const team = getNode(p.orgId);
               return (
-                <tr key={r.id}>
+                <tr key={p.id}>
                   <td>{team?.title}</td>
-                  <td>{r.title}</td>
-                  <td>{r.count}</td>
-                  <td>{r.justification}</td>
-                  <td>{r.createdAt}</td>
+                  <td>{p.title}</td>
+                  <td>{formatDelta(p.delta)}</td>
+                  <td>{p.justification}</td>
+                  <td>{p.createdAt}</td>
                   <td><span className="badge badge-pending_approval">pending approval</span></td>
                 </tr>
               );
