@@ -1,7 +1,7 @@
 import { useApp } from '../context/AppContext';
 
 export default function Approvals() {
-  const { currentUserOrgId, proposals, requisitions, budgets, getChildren, getNode, getHead, getParent, dispatch } = useApp();
+  const { currentUserOrgId, proposals, requisitions, budgets, getChildren, getNode, getHead, getParent, getActualCount, dispatch } = useApp();
 
   const directReportIds = getChildren(currentUserOrgId).map(c => c.id);
   const parentOrg = getParent(currentUserOrgId);
@@ -47,6 +47,32 @@ export default function Approvals() {
     if (d > 0) return <span className="text-success">+{d}</span>;
     if (d < 0) return <span className="text-danger">{d}</span>;
     return <span>0</span>;
+  }
+
+  function getFundingInfo(r) {
+    if (r.fundingType === 'budget') {
+      const b = budgets.find(b => b.id === r.fundingId);
+      if (!b) return <span className="text-muted">No budget linked</span>;
+      const actual = getActualCount(b.orgId);
+      const open = b.budgetedHC - actual;
+      return (
+        <div>
+          <strong>Budget {b.year}</strong><br />
+          Budgeted: {b.budgetedHC} | Filled: {actual} | Open: <span className={open > 0 ? 'text-success' : open < 0 ? 'text-danger' : ''}>{open}</span>
+        </div>
+      );
+    }
+    if (r.fundingType === 'proposal') {
+      const p = proposals.find(p => p.id === r.fundingId);
+      if (!p) return <span className="text-muted">No proposal linked</span>;
+      return (
+        <div>
+          <strong>{p.title}</strong><br />
+          Status: <span className={`badge badge-${p.status}`}>{p.status.replace(/_/g, ' ')}</span> | Delta: {formatDelta(p.delta)}
+        </div>
+      );
+    }
+    return <span className="text-muted">—</span>;
   }
 
   return (
@@ -113,6 +139,7 @@ export default function Approvals() {
               <th>Team</th>
               <th>Role</th>
               <th>Type</th>
+              <th>Funding Source</th>
               <th>Replacing</th>
               <th>Justification</th>
               <th>Date</th>
@@ -129,6 +156,7 @@ export default function Approvals() {
                   <td>{team?.title}</td>
                   <td>{r.role}</td>
                   <td><span className={`badge badge-${r.type}`}>{r.type === 'new_position' ? 'New Position' : 'Substitution'}</span></td>
+                  <td>{getFundingInfo(r)}</td>
                   <td>{r.replacingName || '—'}</td>
                   <td>{r.justification}</td>
                   <td>{r.createdAt}</td>
@@ -186,6 +214,7 @@ export default function Approvals() {
               <th>Team</th>
               <th>Role</th>
               <th>Type</th>
+              <th>Funding Source</th>
               <th>Justification</th>
               <th>Date</th>
               <th>Status</th>
@@ -199,6 +228,7 @@ export default function Approvals() {
                   <td>{team?.title}</td>
                   <td>{r.role}</td>
                   <td>{r.type === 'new_position' ? 'New Position' : 'Substitution'}</td>
+                  <td>{getFundingInfo(r)}</td>
                   <td>{r.justification}</td>
                   <td>{r.createdAt}</td>
                   <td><span className="badge badge-pending_approval">pending approval</span></td>

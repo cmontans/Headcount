@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
-const emptyForm = { role: '', type: 'new_position', justification: '', replacingName: '', orgId: '' };
+const emptyForm = { role: '', type: 'new_position', justification: '', replacingName: '', orgId: '', fundingType: 'budget', fundingId: '' };
 
 export default function Requisitions() {
-  const { currentUserOrgId, requisitions, getDescendantIds, getNode, getHead, dispatch } = useApp();
+  const { currentUserOrgId, requisitions, budgets, proposals, getDescendantIds, getNode, getHead, getActualCount, dispatch } = useApp();
   const [form, setForm] = useState(null);
   const [editId, setEditId] = useState(null);
 
@@ -17,12 +17,12 @@ export default function Requisitions() {
   }
 
   function openEdit(r) {
-    setForm({ role: r.role, type: r.type, justification: r.justification, replacingName: r.replacingName || '', orgId: r.orgId, requestedBy: r.requestedBy });
+    setForm({ role: r.role, type: r.type, justification: r.justification, replacingName: r.replacingName || '', orgId: r.orgId, requestedBy: r.requestedBy, fundingType: r.fundingType || 'budget', fundingId: r.fundingId || '' });
     setEditId(r.id);
   }
 
   function save() {
-    if (!form.role) return;
+    if (!form.role || !form.fundingId) return;
     const payload = { ...form, replacingName: form.type === 'substitution' ? form.replacingName : null };
     if (editId) {
       dispatch({ type: 'UPDATE_REQUISITION', payload: { id: editId, ...payload } });
@@ -42,6 +42,25 @@ export default function Requisitions() {
   const statusBadge = (s) => <span className={`badge badge-${s}`}>{s.replace(/_/g, ' ')}</span>;
   const typeBadge = (t) => <span className={`badge badge-${t}`}>{t === 'new_position' ? 'New Position' : 'Substitution'}</span>;
 
+  // Get funding options for the selected org in the form
+  const fundingBudgets = form ? budgets.filter(b => b.orgId === form.orgId) : [];
+  const fundingProposals = form ? proposals.filter(p => p.orgId === form.orgId && (p.status === 'approved' || p.status === 'pending_approval')) : [];
+
+  function getFundingLabel(r) {
+    if (r.fundingType === 'budget') {
+      const b = budgets.find(b => b.id === r.fundingId);
+      if (!b) return '—';
+      const actual = getActualCount(b.orgId);
+      return `Budget ${b.year} (${actual}/${b.budgetedHC} filled)`;
+    }
+    if (r.fundingType === 'proposal') {
+      const p = proposals.find(p => p.id === r.fundingId);
+      if (!p) return '—';
+      return `${p.title} (${p.status.replace(/_/g, ' ')}, ${p.delta > 0 ? '+' : ''}${p.delta})`;
+    }
+    return '—';
+  }
+
   return (
     <div className="page">
       <div className="page-header">
@@ -54,7 +73,7 @@ export default function Requisitions() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>{editId ? 'Edit' : 'New'} Job Requisition</h3>
             <label>Team / Org Unit
-              <select value={form.orgId} onChange={e => setForm({ ...form, orgId: e.target.value })}>
+              <select value={form.orgId} onChange={e => setForm({ ...form, orgId: e.target.value, fundingId: '' })}>
                 {scopeIds.map(id => {
                   const n = getNode(id);
                   const head = getHead(id);
@@ -76,12 +95,34 @@ export default function Requisitions() {
                 <input value={form.replacingName} onChange={e => setForm({ ...form, replacingName: e.target.value })} placeholder="Name of person being replaced" />
               </label>
             )}
+            <label>Funding Source
+              <select value={form.fundingType} onChange={e => setForm({ ...form, fundingType: e.target.value, fundingId: '' })}>
+                <option value="budget">Existing Budget</option>
+                <option value="proposal">Budget Change Proposal</option>
+              </select>
+            </label>
+            <label>{form.fundingType === 'budget' ? 'Select Budget' : 'Select Proposal'}
+              <select value={form.fundingId} onChange={e => setForm({ ...form, fundingId: e.target.value })}>
+                <option value="">-- Select --</option>
+                {form.fundingType === 'budget' ? (
+                  fundingBudgets.map(b => {
+                    const actual = getActualCount(b.orgId);
+                    const open = b.budgetedHC - actual;
+                    return <option key={b.id} value={b.id}>{b.year} — {b.budgetedHC} HC ({open > 0 ? open + ' open' : 'fully staffed'}){b.notes ? ` — ${b.notes}` : ''}</option>;
+                  })
+                ) : (
+                  fundingProposals.map(p => (
+                    <option key={p.id} value={p.id}>{p.title} ({p.status.replace(/_/g, ' ')}, {p.delta > 0 ? '+' : ''}{p.delta} HC)</option>
+                  ))
+                )}
+              </select>
+            </label>
             <label>Justification
               <textarea value={form.justification} onChange={e => setForm({ ...form, justification: e.target.value })} />
             </label>
             <div className="modal-actions">
               <button className="btn" onClick={() => setForm(null)}>Cancel</button>
-              <button className="btn btn-primary" onClick={save}>Save</button>
+              <button className="btn btn-primary" onClick={save} disabled={!form.fundingId}>Save</button>
             </div>
           </div>
         </div>
@@ -93,6 +134,7 @@ export default function Requisitions() {
             <th>Team</th>
             <th>Role</th>
             <th>Type</th>
+            <th>Funding Source</th>
             <th>Replacing</th>
             <th>Status</th>
             <th>Requested By</th>
@@ -111,6 +153,7 @@ export default function Requisitions() {
                 <td>{node?.title || r.orgId}</td>
                 <td>{r.role}</td>
                 <td>{typeBadge(r.type)}</td>
+                <td>{getFundingLabel(r)}</td>
                 <td>{r.replacingName || '—'}</td>
                 <td>{statusBadge(r.status)}</td>
                 <td>{requestorHead?.name || '—'}</td>
@@ -146,7 +189,7 @@ export default function Requisitions() {
               </tr>
             );
           })}
-          {visible.length === 0 && <tr><td colSpan="9" className="empty">No job requisitions in your scope</td></tr>}
+          {visible.length === 0 && <tr><td colSpan="10" className="empty">No job requisitions in your scope</td></tr>}
         </tbody>
       </table>
     </div>
