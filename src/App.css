@@ -135,6 +135,8 @@
 .badge-escalated { background: #fef3c7; color: #92400e; }
 .btn-warning { background: #f59e0b; color: #fff; }
 .btn-warning:hover { background: #d97706; }
+.badge-pending_acceptance { background: #fef3c7; color: #92400e; }
+.badge-accepted { background: #d1fae5; color: #065f46; }
 
 .row-head { background: #fafafe; }
 

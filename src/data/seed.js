@@ -73,4 +73,11 @@ const requisitions = [
   { id: uuid(), orgId: 'u6', role: 'Backend Engineer', type: 'substitution', justification: 'Replacing engineer moving to Platform team', replacingName: 'Alex Turner', status: 'approved', requestedBy: 'u6', approvedBy: 'u2', createdAt: '2025-02-12' },
 ];
 
-export { orgNodes, budgets, proposals, actuals, requisitions };
+// Budget Transfers: org-to-org budget reallocation
+// status: pending_acceptance | accepted | rejected | cancelled
+const transfers = [
+  { id: uuid(), fromOrgId: 'u8', toOrgId: 'u7', amount: 2, year: 2025, reason: 'Sales East over-staffed, Sales West expanding', status: 'pending_acceptance', proposedBy: 'u8', acceptedBy: null, createdAt: '2025-02-25' },
+  { id: uuid(), fromOrgId: 'u6', toOrgId: 'u5', amount: 1, year: 2025, reason: 'Backend lending 1 HC to Frontend for shared project', status: 'accepted', proposedBy: 'u6', acceptedBy: 'u5', createdAt: '2025-01-28' },
+];
+
+export { orgNodes, budgets, proposals, actuals, requisitions, transfers };

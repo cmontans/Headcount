@@ -1,6 +1,6 @@
 import { createContext, useContext, useReducer, useCallback } from 'react';
 import { v4 as uuid } from 'uuid';
-import { orgNodes as seedOrg, budgets as seedBudgets, proposals as seedProposals, actuals as seedActuals, requisitions as seedRequisitions } from '../data/seed';
+import { orgNodes as seedOrg, budgets as seedBudgets, proposals as seedProposals, actuals as seedActuals, requisitions as seedRequisitions, transfers as seedTransfers } from '../data/seed';
 
 const AppContext = createContext();
 
@@ -14,6 +14,7 @@ const initialState = {
   proposals: seedProposals,
   actuals: seedActuals,
   requisitions: seedRequisitions,
+  transfers: seedTransfers,
   auditLog: [],
 };
 
@@ -104,6 +105,31 @@ function reducer(state, action) {
     case 'CANCEL_REQUISITION':
       return { ...state, requisitions: state.requisitions.map(r => r.id === action.payload ? { ...r, status: 'cancelled' } : r) };
 
+    // --- Budget Transfers ---
+    case 'ADD_TRANSFER':
+      return { ...state, transfers: [...state.transfers, { ...action.payload, id: uuid(), status: 'pending_acceptance', createdAt: new Date().toISOString().slice(0, 10) }] };
+    case 'UPDATE_TRANSFER':
+      return { ...state, transfers: state.transfers.map(t => t.id === action.payload.id ? { ...t, ...action.payload } : t) };
+    case 'DELETE_TRANSFER':
+      return { ...state, transfers: state.transfers.filter(t => t.id !== action.payload) };
+    case 'CANCEL_TRANSFER':
+      return { ...state, transfers: state.transfers.map(t => t.id === action.payload ? { ...t, status: 'cancelled' } : t) };
+    case 'ACCEPT_TRANSFER': {
+      const transfer = state.transfers.find(t => t.id === action.payload.id);
+      if (!transfer) return state;
+      const updatedBudgets = state.budgets.map(b => {
+        if (b.orgId === transfer.fromOrgId && b.year === transfer.year) return { ...b, budgetedHC: b.budgetedHC - transfer.amount };
+        if (b.orgId === transfer.toOrgId && b.year === transfer.year) return { ...b, budgetedHC: b.budgetedHC + transfer.amount };
+        return b;
+      });
+      const updatedTransfers = state.transfers.map(t =>
+        t.id === action.payload.id ? { ...t, status: 'accepted', acceptedBy: action.payload.acceptedBy } : t
+      );
+      return { ...state, transfers: updatedTransfers, budgets: updatedBudgets };
+    }
+    case 'REJECT_TRANSFER':
+      return { ...state, transfers: state.transfers.map(t => t.id === action.payload.id ? { ...t, status: 'rejected', acceptedBy: action.payload.rejectedBy } : t) };
+
     // --- Bulk Import ---
     case 'IMPORT_ORG_NODES':
       return { ...state, orgNodes: action.payload };
@@ -158,6 +184,12 @@ const AUDITED_ACTIONS = {
   OPEN_REQUISITION: 'Opened job requisition for candidates',
   FILL_REQUISITION: 'Marked job requisition as filled',
   CANCEL_REQUISITION: 'Cancelled job requisition',
+  ADD_TRANSFER: 'Proposed budget transfer',
+  UPDATE_TRANSFER: 'Updated budget transfer',
+  DELETE_TRANSFER: 'Deleted budget transfer',
+  CANCEL_TRANSFER: 'Cancelled budget transfer',
+  ACCEPT_TRANSFER: 'Accepted budget transfer',
+  REJECT_TRANSFER: 'Rejected budget transfer',
   IMPORT_ORG_NODES: 'Imported organization structure from CSV',
   IMPORT_BUDGETS: 'Imported budgets from CSV',
   IMPORT_ACTUALS: 'Imported actuals from CSV',
@@ -232,6 +264,19 @@ function buildDetail(state, action) {
     case 'DELETE_ORG_NODE': {
       const n = state.orgNodes.find(x => x.id === action.payload);
       return n ? `"${n.title}"` : '';
+    }
+    case 'ADD_TRANSFER':
+    case 'UPDATE_TRANSFER':
+      return `${action.payload.amount} HC from ${getOrgTitle(action.payload.fromOrgId)} to ${getOrgTitle(action.payload.toOrgId)} (${action.payload.year})`;
+    case 'DELETE_TRANSFER':
+    case 'CANCEL_TRANSFER': {
+      const t = state.transfers.find(x => x.id === (action.payload.id || action.payload));
+      return t ? `${t.amount} HC from ${getOrgTitle(t.fromOrgId)} to ${getOrgTitle(t.toOrgId)}` : '';
+    }
+    case 'ACCEPT_TRANSFER':
+    case 'REJECT_TRANSFER': {
+      const t = state.transfers.find(x => x.id === action.payload.id);
+      return t ? `${t.amount} HC from ${getOrgTitle(t.fromOrgId)} to ${getOrgTitle(t.toOrgId)} (${t.year})` : '';
     }
     case 'IMPORT_ORG_NODES':
       return `${action.payload.length} organization units`;
