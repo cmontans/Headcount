@@ -30,12 +30,12 @@ const budgets = [
 // Budget Change Proposals: requests to change the budget (delta = headcount change, positive or negative)
 // status: draft | pending_approval | approved | rejected
 const proposals = [
-  { id: uuid(), orgId: 'u9', title: 'Hire Senior React Developers', delta: 2, justification: 'New product launch', status: 'approved', requestedBy: 'u9', approvedBy: 'u5', createdAt: '2025-01-10' },
-  { id: uuid(), orgId: 'u9', title: 'Add UX Designer', delta: 1, justification: 'Improve design system', status: 'pending_approval', requestedBy: 'u9', approvedBy: null, createdAt: '2025-02-01' },
-  { id: uuid(), orgId: 'u10', title: 'Add DevOps Engineer', delta: 1, justification: 'CI/CD improvements', status: 'approved', requestedBy: 'u10', approvedBy: 'u6', createdAt: '2025-01-15' },
-  { id: uuid(), orgId: 'u6', title: 'Add Staff Backend Engineer', delta: 1, justification: 'Tech lead for new service', status: 'pending_approval', requestedBy: 'u6', approvedBy: null, createdAt: '2025-02-10' },
-  { id: uuid(), orgId: 'u7', title: 'Expand Account Executive team', delta: 3, justification: 'Q2 expansion', status: 'draft', requestedBy: 'u7', approvedBy: null, createdAt: '2025-02-15' },
-  { id: uuid(), orgId: 'u8', title: 'Reduce Sales East contractors', delta: -2, justification: 'Consolidating with in-house', status: 'draft', requestedBy: 'u8', approvedBy: null, createdAt: '2025-02-20' },
+  { id: uuid(), orgId: 'u9', title: 'Hire Senior React Developers', delta: 2, year: 2025, justification: 'New product launch', status: 'approved', requestedBy: 'u9', approvedBy: 'u5', createdAt: '2025-01-10' },
+  { id: uuid(), orgId: 'u9', title: 'Add UX Designer', delta: 1, year: 2025, justification: 'Improve design system', status: 'pending_approval', requestedBy: 'u9', approvedBy: null, createdAt: '2025-02-01' },
+  { id: uuid(), orgId: 'u10', title: 'Add DevOps Engineer', delta: 1, year: 2025, justification: 'CI/CD improvements', status: 'approved', requestedBy: 'u10', approvedBy: 'u6', createdAt: '2025-01-15' },
+  { id: uuid(), orgId: 'u6', title: 'Add Staff Backend Engineer', delta: 1, year: 2025, justification: 'Tech lead for new service', status: 'pending_approval', requestedBy: 'u6', approvedBy: null, createdAt: '2025-02-10' },
+  { id: uuid(), orgId: 'u7', title: 'Expand Account Executive team', delta: 3, year: 2025, justification: 'Q2 expansion', status: 'draft', requestedBy: 'u7', approvedBy: null, createdAt: '2025-02-15' },
+  { id: uuid(), orgId: 'u8', title: 'Reduce Sales East contractors', delta: -2, year: 2025, justification: 'Consolidating with in-house', status: 'draft', requestedBy: 'u8', approvedBy: null, createdAt: '2025-02-20' },
 ];
 
 // Actuals – people currently filling positions. isHead marks the org unit head.

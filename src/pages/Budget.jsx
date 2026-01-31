@@ -1,16 +1,24 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
+const currentYear = new Date().getFullYear();
+
 export default function Budget() {
   const { currentUserOrgId, budgets, proposals, getDescendantIds, getNode, getHead, getActualCount, dispatch } = useApp();
   const [form, setForm] = useState(null);
   const [editId, setEditId] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
 
   const scopeIds = getDescendantIds(currentUserOrgId);
-  const visible = budgets.filter(b => scopeIds.includes(b.orgId));
+
+  const years = [...new Set(budgets.map(b => b.year))].sort();
+  if (!years.includes(currentYear)) years.push(currentYear);
+  years.sort();
+
+  const visible = budgets.filter(b => scopeIds.includes(b.orgId) && b.year === selectedYear);
 
   function openNew() {
-    setForm({ orgId: currentUserOrgId, year: 2025, budgetedHC: 0, notes: '' });
+    setForm({ orgId: currentUserOrgId, year: selectedYear, budgetedHC: 0, notes: '' });
     setEditId(null);
   }
 
@@ -39,7 +47,15 @@ export default function Budget() {
     <div className="page">
       <div className="page-header">
         <h2>Headcount Budget</h2>
-        <button className="btn btn-primary" onClick={openNew}>+ New Budget Entry</button>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <label className="year-selector">
+            Period:&nbsp;
+            <select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))}>
+              {years.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </label>
+          <button className="btn btn-primary" onClick={openNew}>+ New Budget Entry</button>
+        </div>
       </div>
 
       {form && (
@@ -89,7 +105,7 @@ export default function Budget() {
           {visible.map(b => {
             const node = getNode(b.orgId);
             const actualCount = getActualCount(b.orgId);
-            const pendingDelta = proposals.filter(p => p.orgId === b.orgId && p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
+            const pendingDelta = proposals.filter(p => p.orgId === b.orgId && p.year === selectedYear && p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
             const open = b.budgetedHC - actualCount;
             return (
               <tr key={b.id}>

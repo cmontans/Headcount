@@ -1,23 +1,30 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
+const currentYear = new Date().getFullYear();
 const emptyForm = { title: '', delta: 1, justification: '', orgId: '' };
 
 export default function Proposals() {
   const { currentUserOrgId, proposals, budgets, getDescendantIds, getNode, getHead, dispatch } = useApp();
   const [form, setForm] = useState(null);
   const [editId, setEditId] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
 
   const scopeIds = getDescendantIds(currentUserOrgId);
-  const visible = proposals.filter(p => scopeIds.includes(p.orgId));
+
+  const years = [...new Set(budgets.map(b => b.year))].sort();
+  if (!years.includes(currentYear)) years.push(currentYear);
+  years.sort();
+
+  const visible = proposals.filter(p => scopeIds.includes(p.orgId) && p.year === selectedYear);
 
   function openNew() {
-    setForm({ ...emptyForm, orgId: currentUserOrgId, requestedBy: currentUserOrgId });
+    setForm({ ...emptyForm, orgId: currentUserOrgId, requestedBy: currentUserOrgId, year: selectedYear });
     setEditId(null);
   }
 
   function openEdit(p) {
-    setForm({ title: p.title, delta: p.delta, justification: p.justification, orgId: p.orgId, requestedBy: p.requestedBy });
+    setForm({ title: p.title, delta: p.delta, justification: p.justification, orgId: p.orgId, requestedBy: p.requestedBy, year: p.year });
     setEditId(p.id);
   }
 
@@ -52,7 +59,15 @@ export default function Proposals() {
     <div className="page">
       <div className="page-header">
         <h2>Budget Change Proposals</h2>
-        <button className="btn btn-primary" onClick={openNew}>+ New Budget Change Proposal</button>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <label className="year-selector">
+            Period:&nbsp;
+            <select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))}>
+              {years.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </label>
+          <button className="btn btn-primary" onClick={openNew}>+ New Budget Change Proposal</button>
+        </div>
       </div>
 
       {form && (
@@ -76,7 +91,7 @@ export default function Proposals() {
               <span className="field-hint">Positive = increase headcount budget, negative = decrease</span>
             </label>
             {form.orgId && (() => {
-              const budget = budgets.find(b => b.orgId === form.orgId);
+              const budget = budgets.find(b => b.orgId === form.orgId && b.year === form.year);
               if (!budget) return null;
               return (
                 <div className="budget-preview">

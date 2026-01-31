@@ -45,7 +45,7 @@ function reducer(state, action) {
         current = node?.parentId || null;
       }
       const updatedBudgets = state.budgets.map(b =>
-        affectedOrgIds.includes(b.orgId) ? { ...b, budgetedHC: b.budgetedHC + proposal.delta } : b
+        affectedOrgIds.includes(b.orgId) && b.year === proposal.year ? { ...b, budgetedHC: b.budgetedHC + proposal.delta } : b
       );
       const updatedProposals = state.proposals.map(p =>
         p.id === action.payload.id ? { ...p, status: 'approved', approvedBy: approverOrg } : p

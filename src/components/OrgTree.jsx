@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
-function OrgNode({ node, onEdit, onAdd, onDelete }) {
+function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear }) {
   const { getChildren, proposals, budgets, getActualCount, getHead } = useApp();
   const children = getChildren(node.id);
   const actualCount = getActualCount(node.id);
-  const pendingDelta = proposals.filter(p => p.orgId === node.id && p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
-  const budget = budgets.find(b => b.orgId === node.id);
+  const pendingDelta = proposals.filter(p => p.orgId === node.id && p.year === selectedYear && p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
+  const budget = budgets.find(b => b.orgId === node.id && b.year === selectedYear);
   const head = getHead(node.id);
 
   return (
@@ -33,7 +33,7 @@ function OrgNode({ node, onEdit, onAdd, onDelete }) {
       </div>
       {children.length > 0 && (
         <div className="org-children">
-          {children.map(c => <OrgNode key={c.id} node={c} onEdit={onEdit} onAdd={onAdd} onDelete={onDelete} />)}
+          {children.map(c => <OrgNode key={c.id} node={c} onEdit={onEdit} onAdd={onAdd} onDelete={onDelete} selectedYear={selectedYear} />)}
         </div>
       )}
     </div>
@@ -42,12 +42,19 @@ function OrgNode({ node, onEdit, onAdd, onDelete }) {
 
 const emptyForm = { title: '', parentId: '' };
 
+const currentYear = new Date().getFullYear();
+
 export default function OrgTree() {
-  const { orgNodes, getChildren, getDescendantIds, getHead, dispatch } = useApp();
+  const { orgNodes, budgets, getChildren, getDescendantIds, getHead, dispatch } = useApp();
   const root = orgNodes.find(n => n.parentId === null);
   const [form, setForm] = useState(null);
   const [editId, setEditId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+
+  const years = [...new Set(budgets.map(b => b.year))].sort();
+  if (!years.includes(currentYear)) years.push(currentYear);
+  years.sort();
 
   function openAdd(parentId) {
     setForm({ ...emptyForm, parentId });
@@ -100,11 +107,19 @@ export default function OrgTree() {
     <div className="page">
       <div className="page-header">
         <h2>Organization Hierarchy</h2>
-        <button className="btn btn-primary" onClick={() => openAdd(root?.id || null)}>+ Add Position</button>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <label className="year-selector">
+            Period:&nbsp;
+            <select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))}>
+              {years.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </label>
+          <button className="btn btn-primary" onClick={() => openAdd(root?.id || null)}>+ Add Position</button>
+        </div>
       </div>
 
       <div className="org-tree">
-        {root && <OrgNode node={root} onEdit={openEdit} onAdd={openAdd} onDelete={handleDelete} />}
+        {root && <OrgNode node={root} onEdit={openEdit} onAdd={openAdd} onDelete={handleDelete} selectedYear={selectedYear} />}
       </div>
 
       {form && (
