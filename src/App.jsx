@@ -16,7 +16,7 @@ import './App.css';
 export default function App() {
   return (
     <AppProvider>
-      <BrowserRouter basename="/Headcount">
+      <BrowserRouter basename={import.meta.env.PROD ? '/Headcount' : '/'}>
         <Navbar />
         <main className="main-content">
           <Routes>
