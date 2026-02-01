@@ -15,6 +15,7 @@ export default function Navbar() {
         <NavLink to="/requisitions">Requisitions</NavLink>
         <NavLink to="/transfers">Transfers</NavLink>
         <NavLink to="/challenges">Challenges</NavLink>
+        <NavLink to="/budget-timeline">Timeline</NavLink>
         <NavLink to="/audit-log">Audit Log</NavLink>
         <NavLink to="/data-sync">Data Sync</NavLink>
         <NavLink to="/guide">Guide</NavLink>

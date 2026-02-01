@@ -44,7 +44,6 @@ export default function Challenges() {
 
   function remove(id) { dispatch({ type: 'DELETE_CHALLENGE', payload: id }); }
   function acknowledge(id) { dispatch({ type: 'ACKNOWLEDGE_CHALLENGE', payload: { id, acknowledgedBy: currentUserOrgId } }); }
-  function reject(id) { dispatch({ type: 'REJECT_CHALLENGE', payload: { id, rejectedBy: currentUserOrgId } }); }
 
   const statusBadge = (s) => <span className={`badge badge-${s}`}>{s.replace(/_/g, ' ')}</span>;
 
@@ -137,10 +136,7 @@ export default function Challenges() {
                   <td>{c.createdAt}</td>
                   <td className="actions">
                     {c.status === 'pending' && (
-                      <>
-                        <button className="btn btn-sm btn-success" onClick={() => acknowledge(c.id)}>Acknowledge</button>
-                        <button className="btn btn-sm btn-danger" onClick={() => reject(c.id)}>Reject</button>
-                      </>
+                      <button className="btn btn-sm btn-success" onClick={() => acknowledge(c.id)}>Acknowledge</button>
                     )}
                   </td>
                 </tr>

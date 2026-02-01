@@ -149,9 +149,6 @@ function reducer(state, action) {
       );
       return { ...state, challenges: updatedChallenges, budgets: updatedBudgets };
     }
-    case 'REJECT_CHALLENGE':
-      return { ...state, challenges: state.challenges.map(c => c.id === action.payload.id ? { ...c, status: 'rejected', acknowledgedBy: action.payload.rejectedBy } : c) };
-
     // --- Bulk Import ---
     case 'IMPORT_ORG_NODES':
       return { ...state, orgNodes: action.payload };
@@ -216,7 +213,6 @@ const AUDITED_ACTIONS = {
   UPDATE_CHALLENGE: 'Updated budget challenge',
   DELETE_CHALLENGE: 'Deleted budget challenge',
   ACKNOWLEDGE_CHALLENGE: 'Acknowledged budget challenge',
-  REJECT_CHALLENGE: 'Rejected budget challenge',
   IMPORT_ORG_NODES: 'Imported organization structure from CSV',
   IMPORT_BUDGETS: 'Imported budgets from CSV',
   IMPORT_ACTUALS: 'Imported actuals from CSV',
@@ -312,8 +308,7 @@ function buildDetail(state, action) {
       const ch = state.challenges.find(x => x.id === action.payload);
       return ch ? `${ch.amount} HC from ${getOrgTitle(ch.targetOrgId)}` : '';
     }
-    case 'ACKNOWLEDGE_CHALLENGE':
-    case 'REJECT_CHALLENGE': {
+    case 'ACKNOWLEDGE_CHALLENGE': {
       const ch = state.challenges.find(x => x.id === action.payload.id);
       return ch ? `${ch.amount} HC from ${getOrgTitle(ch.targetOrgId)} (${ch.year})` : '';
     }

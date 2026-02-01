@@ -10,6 +10,7 @@ import Actuals from './pages/Actuals';
 import Requisitions from './pages/Requisitions';
 import Transfers from './pages/Transfers';
 import Challenges from './pages/Challenges';
+import BudgetTimeline from './pages/BudgetTimeline';
 import AuditLog from './pages/AuditLog';
 import DataSync from './pages/DataSync';
 import UserGuide from './pages/UserGuide';
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="/requisitions" element={<Requisitions />} />
             <Route path="/transfers" element={<Transfers />} />
             <Route path="/challenges" element={<Challenges />} />
+            <Route path="/budget-timeline" element={<BudgetTimeline />} />
             <Route path="/audit-log" element={<AuditLog />} />
             <Route path="/data-sync" element={<DataSync />} />
             <Route path="/guide" element={<UserGuide />} />
