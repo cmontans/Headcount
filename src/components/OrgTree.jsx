@@ -9,10 +9,16 @@ function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds }) {
   const budget = budgets.find(b => b.orgId === node.id && b.year === selectedYear);
   const head = getHead(node.id);
   const canEdit = editableIds.includes(node.id);
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div className="org-node">
       <div className="org-card">
+        {children.length > 0 && (
+          <button className="btn-collapse" title={collapsed ? 'Expand' : 'Collapse'} onClick={() => setCollapsed(!collapsed)}>
+            {collapsed ? '\u25B6' : '\u25BC'}
+          </button>
+        )}
         <strong>{node.title}</strong>
         {head ? (
           <span className="org-head-name">{head.name}</span>
@@ -23,6 +29,7 @@ function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds }) {
           {budget && <span title="Budget">B:{budget.budgetedHC}</span>}
           <span title="Actuals">A:{actualCount}</span>
           {pendingDelta !== 0 && <span title="Pending budget change">P:{pendingDelta > 0 ? '+' : ''}{pendingDelta}</span>}
+          {collapsed && children.length > 0 && <span title="Hidden children" className="org-collapsed-hint">[{children.length}]</span>}
         </div>
         {canEdit && (
           <div className="org-card-actions">
@@ -32,7 +39,7 @@ function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds }) {
           </div>
         )}
       </div>
-      {children.length > 0 && (
+      {children.length > 0 && !collapsed && (
         <div className="org-children">
           {children.map(c => <OrgNode key={c.id} node={c} onEdit={onEdit} onAdd={onAdd} onDelete={onDelete} selectedYear={selectedYear} editableIds={editableIds} />)}
         </div>
