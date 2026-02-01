@@ -10,7 +10,6 @@ export default function Navbar() {
         <NavLink to="/org">Organization</NavLink>
         <NavLink to="/budget-management">Budget Mgmt</NavLink>
         <NavLink to="/actuals-management">Actuals Mgmt</NavLink>
-        <NavLink to="/budget">Budget</NavLink>
         <NavLink to="/budget-timeline">Timeline</NavLink>
         <NavLink to="/admin">Admin</NavLink>
       </div>

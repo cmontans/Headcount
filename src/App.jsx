@@ -5,7 +5,6 @@ import Dashboard from './pages/Dashboard';
 import OrgTree from './components/OrgTree';
 import BudgetManagement from './pages/BudgetManagement';
 import ActualsManagement from './pages/ActualsManagement';
-import Budget from './pages/Budget';
 import BudgetTimeline from './pages/BudgetTimeline';
 import Admin from './pages/Admin';
 import './App.css';
@@ -21,7 +20,6 @@ export default function App() {
             <Route path="/org" element={<OrgTree />} />
             <Route path="/budget-management" element={<BudgetManagement />} />
             <Route path="/actuals-management" element={<ActualsManagement />} />
-            <Route path="/budget" element={<Budget />} />
             <Route path="/budget-timeline" element={<BudgetTimeline />} />
             <Route path="/admin" element={<Admin />} />
           </Routes>

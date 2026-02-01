@@ -52,6 +52,11 @@ const proposals = [
   { id: p4, orgId: 'u6', title: 'Add Staff Backend Engineer', delta: 1, year: 2025, justification: 'Tech lead for new service', status: 'pending_approval', requestedBy: 'u6', approvedBy: null, createdAt: '2025-02-10' },
   { id: p5, orgId: 'u7', title: 'Expand Account Executive team', delta: 3, year: 2025, justification: 'Q2 expansion', status: 'draft', requestedBy: 'u7', approvedBy: null, createdAt: '2025-02-15' },
   { id: p6, orgId: 'u8', title: 'Reduce Sales East contractors', delta: -2, year: 2025, justification: 'Consolidating with in-house', status: 'draft', requestedBy: 'u8', approvedBy: null, createdAt: '2025-02-20' },
+  { id: uuid(), orgId: 'u5', title: 'Add QA Engineer to Frontend', delta: 1, year: 2025, justification: 'Quality issues on recent releases', status: 'pending_approval', requestedBy: 'u5', approvedBy: null, createdAt: '2025-03-01' },
+  { id: uuid(), orgId: 'u10', title: 'Reduce Platform contractors', delta: -1, year: 2025, justification: 'Automation replaced manual infra work', status: 'approved', requestedBy: 'u10', approvedBy: 'u6', createdAt: '2025-02-05' },
+  { id: uuid(), orgId: 'v4', title: 'Hire investigative journalist', delta: 1, year: 2025, justification: 'Expanding investigative coverage', status: 'pending_approval', requestedBy: 'v4', approvedBy: null, createdAt: '2025-02-28' },
+  { id: uuid(), orgId: 'v5', title: 'Add Social Media Manager', delta: 1, year: 2025, justification: 'Growing digital audience engagement', status: 'approved', requestedBy: 'v5', approvedBy: 'v3', createdAt: '2025-01-20' },
+  { id: uuid(), orgId: 'u3', title: 'Sales leadership restructuring', delta: -1, year: 2025, justification: 'Merging regional director roles', status: 'rejected', requestedBy: 'u3', approvedBy: null, createdAt: '2025-01-30' },
 ];
 
 // Actuals – people currently filling positions. isHead marks the org unit head.
@@ -104,6 +109,10 @@ const requisitions = [
 const transfers = [
   { id: uuid(), fromOrgId: 'u8', toOrgId: 'u7', amount: 2, year: 2025, reason: 'Sales East over-staffed, Sales West expanding', status: 'pending_acceptance', proposedBy: 'u8', acceptedBy: null, createdAt: '2025-02-25' },
   { id: uuid(), fromOrgId: 'u6', toOrgId: 'u5', amount: 1, year: 2025, reason: 'Backend lending 1 HC to Frontend for shared project', status: 'accepted', proposedBy: 'u6', acceptedBy: 'u5', createdAt: '2025-01-28' },
+  { id: uuid(), fromOrgId: 'u4', toOrgId: 'u3', amount: 1, year: 2025, reason: 'Finance rebalancing HC toward Sales for Q3 push', status: 'accepted', proposedBy: 'u4', acceptedBy: 'u3', createdAt: '2025-01-15' },
+  { id: uuid(), fromOrgId: 'u5', toOrgId: 'u6', amount: 2, year: 2025, reason: 'Frontend lending capacity for backend API migration', status: 'pending_acceptance', proposedBy: 'u5', acceptedBy: null, createdAt: '2025-03-01' },
+  { id: uuid(), fromOrgId: 'v3', toOrgId: 'v2', amount: 1, year: 2025, reason: 'Marketing shifting 1 HC to Content for launch campaign', status: 'accepted', proposedBy: 'v3', acceptedBy: 'v2', createdAt: '2025-02-10' },
+  { id: uuid(), fromOrgId: 'u7', toOrgId: 'u8', amount: 1, year: 2025, reason: 'Sales West supporting East region ramp-up', status: 'rejected', proposedBy: 'u7', acceptedBy: null, rejectedBy: 'u8', createdAt: '2025-02-05' },
 ];
 
 // Budget Challenges: a superior places a budget reduction target on a subordinate
@@ -111,6 +120,10 @@ const transfers = [
 const challenges = [
   { id: uuid(), targetOrgId: 'u8', amount: 2, year: 2025, reason: 'Reduce contractor spend in Sales East', issuedBy: 'u3', acknowledgedBy: null, status: 'pending', createdAt: '2025-02-20' },
   { id: uuid(), targetOrgId: 'u9', amount: 1, year: 2025, reason: 'Optimize UI team size after project completion', issuedBy: 'u5', acknowledgedBy: 'u9', status: 'acknowledged', createdAt: '2025-01-25' },
+  { id: uuid(), targetOrgId: 'u6', amount: 3, year: 2025, reason: 'Backend team cost optimization — consolidate senior roles', issuedBy: 'u2', acknowledgedBy: null, status: 'pending', createdAt: '2025-03-01' },
+  { id: uuid(), targetOrgId: 'u7', amount: 1, year: 2025, reason: 'Align Sales West with revised territory targets', issuedBy: 'u3', acknowledgedBy: 'u7', status: 'acknowledged', createdAt: '2025-02-01' },
+  { id: uuid(), targetOrgId: 'u10', amount: 2, year: 2025, reason: 'Platform team automation reduces need for manual ops', issuedBy: 'u6', acknowledgedBy: null, status: 'pending', createdAt: '2025-03-05' },
+  { id: uuid(), targetOrgId: 'v4', amount: 1, year: 2025, reason: 'Editorial efficiency gains from AI tooling', issuedBy: 'v2', acknowledgedBy: 'v4', status: 'acknowledged', createdAt: '2025-02-15' },
 ];
 
 export { orgNodes, budgets, proposals, actuals, requisitions, transfers, challenges };
