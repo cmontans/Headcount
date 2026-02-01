@@ -3,13 +3,11 @@ import { AppProvider } from './context/AppContext';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import OrgTree from './components/OrgTree';
-import Proposals from './pages/Proposals';
+import BudgetManagement from './pages/BudgetManagement';
 import Approvals from './pages/Approvals';
 import Budget from './pages/Budget';
 import Actuals from './pages/Actuals';
 import Requisitions from './pages/Requisitions';
-import Transfers from './pages/Transfers';
-import Challenges from './pages/Challenges';
 import BudgetTimeline from './pages/BudgetTimeline';
 import AuditLog from './pages/AuditLog';
 import DataSync from './pages/DataSync';
@@ -25,13 +23,11 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/org" element={<OrgTree />} />
-            <Route path="/proposals" element={<Proposals />} />
+            <Route path="/budget-management" element={<BudgetManagement />} />
             <Route path="/approvals" element={<Approvals />} />
             <Route path="/budget" element={<Budget />} />
             <Route path="/actuals" element={<Actuals />} />
             <Route path="/requisitions" element={<Requisitions />} />
-            <Route path="/transfers" element={<Transfers />} />
-            <Route path="/challenges" element={<Challenges />} />
             <Route path="/budget-timeline" element={<BudgetTimeline />} />
             <Route path="/audit-log" element={<AuditLog />} />
             <Route path="/data-sync" element={<DataSync />} />

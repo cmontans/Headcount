@@ -61,6 +61,26 @@
 
 .page h2 { margin-bottom: 1rem; font-size: 1.4rem; }
 
+/* ---- Tabs ---- */
+.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 1.25rem; }
+.tab {
+  padding: 0.5rem 1.25rem;
+  border: none;
+  background: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab:hover { color: var(--text); }
+.tab-active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-content { min-height: 200px; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+.section-header h3 { margin: 0; }
+
 /* ---- Buttons ---- */
 .btn {
   display: inline-flex;

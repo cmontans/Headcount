@@ -8,13 +8,11 @@ export default function Navbar() {
       <div className="navbar-links">
         <NavLink to="/">Dashboard</NavLink>
         <NavLink to="/org">Organization</NavLink>
-        <NavLink to="/proposals">Budget Changes</NavLink>
+        <NavLink to="/budget-management">Budget Mgmt</NavLink>
         <NavLink to="/approvals">Approvals</NavLink>
         <NavLink to="/budget">Budget</NavLink>
         <NavLink to="/actuals">Actuals</NavLink>
         <NavLink to="/requisitions">Requisitions</NavLink>
-        <NavLink to="/transfers">Transfers</NavLink>
-        <NavLink to="/challenges">Challenges</NavLink>
         <NavLink to="/budget-timeline">Timeline</NavLink>
         <NavLink to="/audit-log">Audit Log</NavLink>
         <NavLink to="/data-sync">Data Sync</NavLink>

@@ -1,0 +1,484 @@
+import { useState } from 'react';
+import { useApp } from '../context/AppContext';
+
+const currentYear = new Date().getFullYear();
+
+/* ───── Proposals sub-section ───── */
+function ProposalsSection({ selectedYear }) {
+  const { currentUserOrgId, proposals, budgets, getDescendantIds, getNode, getHead, dispatch } = useApp();
+  const [form, setForm] = useState(null);
+  const [editId, setEditId] = useState(null);
+
+  const scopeIds = getDescendantIds(currentUserOrgId);
+  const visible = proposals.filter(p => scopeIds.includes(p.orgId) && p.year === selectedYear);
+
+  const emptyForm = { title: '', delta: 1, justification: '', orgId: '' };
+
+  function openNew() {
+    setForm({ ...emptyForm, orgId: currentUserOrgId, requestedBy: currentUserOrgId, year: selectedYear });
+    setEditId(null);
+  }
+  function openEdit(p) {
+    setForm({ title: p.title, delta: p.delta, justification: p.justification, orgId: p.orgId, requestedBy: p.requestedBy, year: p.year });
+    setEditId(p.id);
+  }
+  function save() {
+    if (!form.title) return;
+    if (editId) dispatch({ type: 'UPDATE_PROPOSAL', payload: { id: editId, ...form } });
+    else dispatch({ type: 'ADD_PROPOSAL', payload: form });
+    setForm(null); setEditId(null);
+  }
+  function submit(id) { dispatch({ type: 'SUBMIT_PROPOSAL', payload: id }); }
+  function remove(id) { dispatch({ type: 'DELETE_PROPOSAL', payload: id }); }
+
+  const statusBadge = (s) => <span className={`badge badge-${s}`}>{s.replace('_', ' ')}</span>;
+  function formatDelta(d) {
+    if (d > 0) return <span className="text-success">+{d}</span>;
+    if (d < 0) return <span className="text-danger">{d}</span>;
+    return <span>0</span>;
+  }
+
+  return (
+    <>
+      <div className="section-header">
+        <h3>Budget Change Proposals</h3>
+        <button className="btn btn-primary" onClick={openNew}>+ New Proposal</button>
+      </div>
+
+      {form && (
+        <div className="modal-overlay" onClick={() => setForm(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h3>{editId ? 'Edit' : 'New'} Budget Change Proposal</h3>
+            <label>Team / Org Unit
+              <select value={form.orgId} onChange={e => setForm({ ...form, orgId: e.target.value })}>
+                {scopeIds.map(id => {
+                  const n = getNode(id);
+                  const head = getHead(id);
+                  return n ? <option key={id} value={id}>{n.title}{head ? ` (${head.name})` : ''}</option> : null;
+                })}
+              </select>
+            </label>
+            <label>Proposal Title
+              <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="e.g. Hire 2 Frontend Engineers" />
+            </label>
+            <label>Budget Change (delta)
+              <input type="number" value={form.delta} onChange={e => setForm({ ...form, delta: parseInt(e.target.value) || 0 })} />
+              <span className="field-hint">Positive = increase headcount budget, negative = decrease</span>
+            </label>
+            {form.orgId && (() => {
+              const budget = budgets.find(b => b.orgId === form.orgId && b.year === form.year);
+              if (!budget) return null;
+              return (
+                <div className="budget-preview">
+                  Current budget: <strong>{budget.budgetedHC}</strong> &rarr; After approval: <strong>{budget.budgetedHC + (form.delta || 0)}</strong>
+                </div>
+              );
+            })()}
+            <label>Justification
+              <textarea value={form.justification} onChange={e => setForm({ ...form, justification: e.target.value })} />
+            </label>
+            <div className="modal-actions">
+              <button className="btn" onClick={() => setForm(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={save}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Team</th><th>Proposal</th><th>Delta</th><th>Status</th><th>Requested By</th><th>Approved By</th><th>Date</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {visible.map(p => {
+            const node = getNode(p.orgId);
+            const requestorHead = getHead(p.requestedBy);
+            const approverHead = p.approvedBy ? getHead(p.approvedBy) : null;
+            return (
+              <tr key={p.id}>
+                <td>{node?.title || p.orgId}</td>
+                <td>{p.title}</td>
+                <td>{formatDelta(p.delta)}</td>
+                <td>{statusBadge(p.status)}</td>
+                <td>{requestorHead?.name || '—'}</td>
+                <td>{approverHead?.name || '—'}</td>
+                <td>{p.createdAt}</td>
+                <td className="actions">
+                  {p.status === 'draft' && (
+                    <>
+                      <button className="btn btn-sm" onClick={() => openEdit(p)}>Edit</button>
+                      <button className="btn btn-sm btn-primary" onClick={() => submit(p.id)}>Submit</button>
+                      <button className="btn btn-sm btn-danger" onClick={() => remove(p.id)}>Delete</button>
+                    </>
+                  )}
+                  {p.status === 'rejected' && (
+                    <>
+                      <button className="btn btn-sm" onClick={() => openEdit(p)}>Edit</button>
+                      <button className="btn btn-sm btn-primary" onClick={() => submit(p.id)}>Re-submit</button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+          {visible.length === 0 && <tr><td colSpan="8" className="empty">No budget change proposals in your scope</td></tr>}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+/* ───── Transfers sub-section ───── */
+function TransfersSection({ selectedYear }) {
+  const { currentUserOrgId, transfers, budgets, orgNodes, getDescendantIds, getNode, getHead, dispatch } = useApp();
+  const [form, setForm] = useState(null);
+  const [editId, setEditId] = useState(null);
+
+  const scopeIds = getDescendantIds(currentUserOrgId);
+  const visible = transfers.filter(t => t.year === selectedYear && (scopeIds.includes(t.fromOrgId) || scopeIds.includes(t.toOrgId)));
+  const incoming = transfers.filter(t => t.status === 'pending_acceptance' && t.year === selectedYear && scopeIds.includes(t.toOrgId));
+
+  function openNew() {
+    setForm({ fromOrgId: currentUserOrgId, toOrgId: '', amount: 1, year: selectedYear, reason: '', proposedBy: currentUserOrgId });
+    setEditId(null);
+  }
+  function openEdit(t) {
+    setForm({ fromOrgId: t.fromOrgId, toOrgId: t.toOrgId, amount: t.amount, year: t.year, reason: t.reason, proposedBy: t.proposedBy });
+    setEditId(t.id);
+  }
+  function save() {
+    if (!form.toOrgId || !form.amount) return;
+    if (form.fromOrgId === form.toOrgId) { alert('Sender and receiver must be different.'); return; }
+    if (editId) dispatch({ type: 'UPDATE_TRANSFER', payload: { id: editId, ...form } });
+    else dispatch({ type: 'ADD_TRANSFER', payload: form });
+    setForm(null); setEditId(null);
+  }
+  function cancel(id) { dispatch({ type: 'CANCEL_TRANSFER', payload: id }); }
+  function remove(id) { dispatch({ type: 'DELETE_TRANSFER', payload: id }); }
+  function accept(id) { dispatch({ type: 'ACCEPT_TRANSFER', payload: { id, acceptedBy: currentUserOrgId } }); }
+  function reject(id) { dispatch({ type: 'REJECT_TRANSFER', payload: { id, rejectedBy: currentUserOrgId } }); }
+
+  const statusBadge = (s) => <span className={`badge badge-${s}`}>{s.replace(/_/g, ' ')}</span>;
+
+  return (
+    <>
+      <div className="section-header">
+        <h3>Budget Transfers</h3>
+        <button className="btn btn-primary" onClick={openNew}>+ Propose Transfer</button>
+      </div>
+
+      {incoming.length > 0 && (
+        <>
+          <h4>Incoming Transfer Requests</h4>
+          <table className="table">
+            <thead>
+              <tr><th>From</th><th>To</th><th>Amount</th><th>Reason</th><th>Proposed By</th><th>Date</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              {incoming.map(t => {
+                const fromNode = getNode(t.fromOrgId);
+                const toNode = getNode(t.toOrgId);
+                const proposerHead = getHead(t.proposedBy);
+                const fromBudget = budgets.find(b => b.orgId === t.fromOrgId && b.year === t.year);
+                const toBudget = budgets.find(b => b.orgId === t.toOrgId && b.year === t.year);
+                return (
+                  <tr key={t.id}>
+                    <td>{fromNode?.title} ({fromBudget ? fromBudget.budgetedHC : '?'} HC)</td>
+                    <td>{toNode?.title} ({toBudget ? toBudget.budgetedHC : '?'} HC)</td>
+                    <td><strong>{t.amount}</strong></td>
+                    <td>{t.reason}</td>
+                    <td>{proposerHead?.name || '—'}</td>
+                    <td>{t.createdAt}</td>
+                    <td className="actions">
+                      <button className="btn btn-sm btn-success" onClick={() => accept(t.id)}>Accept</button>
+                      <button className="btn btn-sm btn-danger" onClick={() => reject(t.id)}>Reject</button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </>
+      )}
+
+      {form && (
+        <div className="modal-overlay" onClick={() => setForm(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h3>{editId ? 'Edit' : 'Propose'} Budget Transfer</h3>
+            <label>From (your org unit)
+              <select value={form.fromOrgId} onChange={e => setForm({ ...form, fromOrgId: e.target.value })}>
+                {scopeIds.map(id => {
+                  const n = getNode(id);
+                  const head = getHead(id);
+                  const b = budgets.find(b => b.orgId === id && b.year === form.year);
+                  return n ? <option key={id} value={id}>{n.title}{head ? ` (${head.name})` : ''}{b ? ` [${b.budgetedHC} HC]` : ''}</option> : null;
+                })}
+              </select>
+            </label>
+            <label>To (receiving org unit)
+              <select value={form.toOrgId} onChange={e => setForm({ ...form, toOrgId: e.target.value })}>
+                <option value="">— Select —</option>
+                {orgNodes.filter(n => !scopeIds.includes(n.id)).map(n => {
+                  const head = getHead(n.id);
+                  const b = budgets.find(b => b.orgId === n.id && b.year === form.year);
+                  return <option key={n.id} value={n.id}>{n.title}{head ? ` (${head.name})` : ''}{b ? ` [${b.budgetedHC} HC]` : ''}</option>;
+                })}
+              </select>
+            </label>
+            <label>Amount (HC to transfer)
+              <input type="number" min="1" value={form.amount} onChange={e => setForm({ ...form, amount: parseInt(e.target.value) || 0 })} />
+            </label>
+            {form.fromOrgId && (() => {
+              const b = budgets.find(b => b.orgId === form.fromOrgId && b.year === form.year);
+              if (!b) return null;
+              return (
+                <div className="budget-preview">
+                  Sender budget: <strong>{b.budgetedHC}</strong> → After transfer: <strong>{b.budgetedHC - (form.amount || 0)}</strong>
+                </div>
+              );
+            })()}
+            <label>Reason
+              <textarea value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} placeholder="Why is this transfer needed?" />
+            </label>
+            <div className="modal-actions">
+              <button className="btn" onClick={() => setForm(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={save}>{editId ? 'Update' : 'Propose Transfer'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <table className="table" style={{ marginTop: incoming.length > 0 ? '1rem' : 0 }}>
+        <thead>
+          <tr><th>From</th><th>To</th><th>Amount</th><th>Reason</th><th>Status</th><th>Proposed By</th><th>Accepted By</th><th>Date</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {visible.map(t => {
+            const fromNode = getNode(t.fromOrgId);
+            const toNode = getNode(t.toOrgId);
+            const proposerHead = getHead(t.proposedBy);
+            const accepterHead = t.acceptedBy ? getHead(t.acceptedBy) : null;
+            const isMine = scopeIds.includes(t.fromOrgId);
+            return (
+              <tr key={t.id}>
+                <td>{fromNode?.title}</td>
+                <td>{toNode?.title}</td>
+                <td><strong>{t.amount}</strong></td>
+                <td>{t.reason}</td>
+                <td>{statusBadge(t.status)}</td>
+                <td>{proposerHead?.name || '—'}</td>
+                <td>{accepterHead?.name || '—'}</td>
+                <td>{t.createdAt}</td>
+                <td className="actions">
+                  {t.status === 'pending_acceptance' && isMine && (
+                    <>
+                      <button className="btn btn-sm" onClick={() => openEdit(t)}>Edit</button>
+                      <button className="btn btn-sm btn-danger" onClick={() => cancel(t.id)}>Cancel</button>
+                    </>
+                  )}
+                  {t.status === 'pending_acceptance' && !isMine && (
+                    <>
+                      <button className="btn btn-sm btn-success" onClick={() => accept(t.id)}>Accept</button>
+                      <button className="btn btn-sm btn-danger" onClick={() => reject(t.id)}>Reject</button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+          {visible.length === 0 && <tr><td colSpan="9" className="empty">No budget transfers for this period</td></tr>}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+/* ───── Challenges sub-section ───── */
+function ChallengesSection({ selectedYear }) {
+  const { currentUserOrgId, challenges, budgets, getDescendantIds, getNode, getHead, getActualCount, dispatch } = useApp();
+  const [form, setForm] = useState(null);
+  const [editId, setEditId] = useState(null);
+
+  const subordinateIds = getDescendantIds(currentUserOrgId).filter(id => id !== currentUserOrgId);
+  const issuedChallenges = challenges.filter(c => c.issuedBy === currentUserOrgId && c.year === selectedYear);
+  const receivedChallenges = challenges.filter(c => c.targetOrgId === currentUserOrgId && c.year === selectedYear);
+
+  function openNew() {
+    setForm({ targetOrgId: subordinateIds[0] || '', amount: 1, year: selectedYear, reason: '' });
+    setEditId(null);
+  }
+  function openEdit(c) {
+    setForm({ targetOrgId: c.targetOrgId, amount: c.amount, year: c.year, reason: c.reason });
+    setEditId(c.id);
+  }
+  function save() {
+    if (!form.targetOrgId || form.amount <= 0) return;
+    if (editId) dispatch({ type: 'UPDATE_CHALLENGE', payload: { id: editId, ...form } });
+    else dispatch({ type: 'ADD_CHALLENGE', payload: { ...form, issuedBy: currentUserOrgId } });
+    setForm(null); setEditId(null);
+  }
+  function remove(id) { dispatch({ type: 'DELETE_CHALLENGE', payload: id }); }
+  function acknowledge(id) { dispatch({ type: 'ACKNOWLEDGE_CHALLENGE', payload: { id, acknowledgedBy: currentUserOrgId } }); }
+
+  const statusBadge = (s) => <span className={`badge badge-${s}`}>{s.replace(/_/g, ' ')}</span>;
+
+  return (
+    <>
+      <div className="section-header">
+        <h3>Budget Challenges</h3>
+        {subordinateIds.length > 0 && (
+          <button className="btn btn-primary" onClick={openNew}>+ Issue Challenge</button>
+        )}
+      </div>
+
+      {form && (
+        <div className="modal-overlay" onClick={() => setForm(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h3>{editId ? 'Edit' : 'Issue'} Budget Challenge</h3>
+            <label>Target Organization
+              <select value={form.targetOrgId} onChange={e => setForm({ ...form, targetOrgId: e.target.value })}>
+                {subordinateIds.map(id => {
+                  const n = getNode(id);
+                  const head = getHead(id);
+                  const budget = budgets.find(b => b.orgId === id && b.year === form.year);
+                  return n ? <option key={id} value={id}>{n.title}{head ? ` (${head.name})` : ''}{budget ? ` — ${budget.budgetedHC} HC` : ''}</option> : null;
+                })}
+              </select>
+            </label>
+            {form.targetOrgId && (() => {
+              const budget = budgets.find(b => b.orgId === form.targetOrgId && b.year === form.year);
+              if (!budget) return null;
+              const actual = getActualCount(form.targetOrgId);
+              return (
+                <div className="budget-preview">
+                  Current budget: <strong>{budget.budgetedHC}</strong> | Filled: {actual} | After challenge: <strong>{budget.budgetedHC - (form.amount || 0)}</strong>
+                </div>
+              );
+            })()}
+            <label>Reduction Amount (HC)
+              <input type="number" min="1" value={form.amount} onChange={e => setForm({ ...form, amount: parseInt(e.target.value) || 0 })} />
+            </label>
+            <label>Reason
+              <textarea value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} placeholder="Explain why this budget reduction is needed" />
+            </label>
+            <div className="modal-actions">
+              <button className="btn" onClick={() => setForm(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={save}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {receivedChallenges.length > 0 && (
+        <>
+          <h4>Challenges Received</h4>
+          <table className="table">
+            <thead>
+              <tr><th>Issued By</th><th>Reduction</th><th>Current Budget</th><th>After Challenge</th><th>Reason</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              {receivedChallenges.map(c => {
+                const issuerHead = getHead(c.issuedBy);
+                const issuerNode = getNode(c.issuedBy);
+                const budget = budgets.find(b => b.orgId === c.targetOrgId && b.year === c.year);
+                const currentHC = budget ? budget.budgetedHC : 0;
+                return (
+                  <tr key={c.id}>
+                    <td>{issuerHead?.name || '—'} ({issuerNode?.title})</td>
+                    <td><span className="text-danger">-{c.amount}</span></td>
+                    <td>{currentHC}</td>
+                    <td><strong>{currentHC - c.amount}</strong></td>
+                    <td>{c.reason}</td>
+                    <td>{statusBadge(c.status)}</td>
+                    <td>{c.createdAt}</td>
+                    <td className="actions">
+                      {c.status === 'pending' && (
+                        <button className="btn btn-sm btn-success" onClick={() => acknowledge(c.id)}>Acknowledge</button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </>
+      )}
+
+      <h4 style={{ marginTop: receivedChallenges.length > 0 ? '1rem' : 0 }}>Challenges Issued</h4>
+      <table className="table">
+        <thead>
+          <tr><th>Target Org</th><th>Reduction</th><th>Current Budget</th><th>Reason</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {issuedChallenges.map(c => {
+            const targetNode = getNode(c.targetOrgId);
+            const targetHead = getHead(c.targetOrgId);
+            const budget = budgets.find(b => b.orgId === c.targetOrgId && b.year === c.year);
+            return (
+              <tr key={c.id}>
+                <td>{targetNode?.title}{targetHead ? ` (${targetHead.name})` : ''}</td>
+                <td><span className="text-danger">-{c.amount}</span></td>
+                <td>{budget ? budget.budgetedHC : '—'}</td>
+                <td>{c.reason}</td>
+                <td>{statusBadge(c.status)}</td>
+                <td>{c.createdAt}</td>
+                <td className="actions">
+                  {c.status === 'pending' && (
+                    <>
+                      <button className="btn btn-sm" onClick={() => openEdit(c)}>Edit</button>
+                      <button className="btn btn-sm btn-danger" onClick={() => remove(c.id)}>Delete</button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+          {issuedChallenges.length === 0 && <tr><td colSpan="7" className="empty">No challenges issued for this period</td></tr>}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+/* ───── Main page with tabs ───── */
+const TABS = ['Proposals', 'Transfers', 'Challenges'];
+
+export default function BudgetManagement() {
+  const { budgets } = useApp();
+  const [activeTab, setActiveTab] = useState('Proposals');
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+
+  const years = [...new Set(budgets.map(b => b.year))].sort();
+  if (!years.includes(currentYear)) years.push(currentYear);
+  years.sort();
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <h2>Budget Management</h2>
+        <label className="year-selector">
+          Period:&nbsp;
+          <select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))}>
+            {years.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </label>
+      </div>
+
+      <div className="tabs">
+        {TABS.map(tab => (
+          <button key={tab} className={`tab ${activeTab === tab ? 'tab-active' : ''}`} onClick={() => setActiveTab(tab)}>
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      <div className="tab-content">
+        {activeTab === 'Proposals' && <ProposalsSection selectedYear={selectedYear} />}
+        {activeTab === 'Transfers' && <TransfersSection selectedYear={selectedYear} />}
+        {activeTab === 'Challenges' && <ChallengesSection selectedYear={selectedYear} />}
+      </div>
+    </div>
+  );
+}
