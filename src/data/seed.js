@@ -84,4 +84,11 @@ const transfers = [
   { id: uuid(), fromOrgId: 'u6', toOrgId: 'u5', amount: 1, year: 2025, reason: 'Backend lending 1 HC to Frontend for shared project', status: 'accepted', proposedBy: 'u6', acceptedBy: 'u5', createdAt: '2025-01-28' },
 ];
 
-export { orgNodes, budgets, proposals, actuals, requisitions, transfers };
+// Budget Challenges: a superior places a budget reduction target on a subordinate
+// status: pending | acknowledged | rejected
+const challenges = [
+  { id: uuid(), targetOrgId: 'u8', amount: 2, year: 2025, reason: 'Reduce contractor spend in Sales East', issuedBy: 'u3', acknowledgedBy: null, status: 'pending', createdAt: '2025-02-20' },
+  { id: uuid(), targetOrgId: 'u9', amount: 1, year: 2025, reason: 'Optimize UI team size after project completion', issuedBy: 'u5', acknowledgedBy: 'u9', status: 'acknowledged', createdAt: '2025-01-25' },
+];
+
+export { orgNodes, budgets, proposals, actuals, requisitions, transfers, challenges };

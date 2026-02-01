@@ -1,6 +1,6 @@
 import { createContext, useContext, useReducer, useCallback } from 'react';
 import { v4 as uuid } from 'uuid';
-import { orgNodes as seedOrg, budgets as seedBudgets, proposals as seedProposals, actuals as seedActuals, requisitions as seedRequisitions, transfers as seedTransfers } from '../data/seed';
+import { orgNodes as seedOrg, budgets as seedBudgets, proposals as seedProposals, actuals as seedActuals, requisitions as seedRequisitions, transfers as seedTransfers, challenges as seedChallenges } from '../data/seed';
 
 const AppContext = createContext();
 
@@ -15,6 +15,7 @@ const initialState = {
   actuals: seedActuals,
   requisitions: seedRequisitions,
   transfers: seedTransfers,
+  challenges: seedChallenges,
   auditLog: [],
 };
 
@@ -130,6 +131,27 @@ function reducer(state, action) {
     case 'REJECT_TRANSFER':
       return { ...state, transfers: state.transfers.map(t => t.id === action.payload.id ? { ...t, status: 'rejected', acceptedBy: action.payload.rejectedBy } : t) };
 
+    // --- Budget Challenges ---
+    case 'ADD_CHALLENGE':
+      return { ...state, challenges: [...state.challenges, { ...action.payload, id: uuid(), status: 'pending', createdAt: new Date().toISOString().slice(0, 10) }] };
+    case 'UPDATE_CHALLENGE':
+      return { ...state, challenges: state.challenges.map(c => c.id === action.payload.id ? { ...c, ...action.payload } : c) };
+    case 'DELETE_CHALLENGE':
+      return { ...state, challenges: state.challenges.filter(c => c.id !== action.payload) };
+    case 'ACKNOWLEDGE_CHALLENGE': {
+      const challenge = state.challenges.find(c => c.id === action.payload.id);
+      if (!challenge) return state;
+      const updatedBudgets = state.budgets.map(b =>
+        b.orgId === challenge.targetOrgId && b.year === challenge.year ? { ...b, budgetedHC: b.budgetedHC - challenge.amount } : b
+      );
+      const updatedChallenges = state.challenges.map(c =>
+        c.id === action.payload.id ? { ...c, status: 'acknowledged', acknowledgedBy: action.payload.acknowledgedBy } : c
+      );
+      return { ...state, challenges: updatedChallenges, budgets: updatedBudgets };
+    }
+    case 'REJECT_CHALLENGE':
+      return { ...state, challenges: state.challenges.map(c => c.id === action.payload.id ? { ...c, status: 'rejected', acknowledgedBy: action.payload.rejectedBy } : c) };
+
     // --- Bulk Import ---
     case 'IMPORT_ORG_NODES':
       return { ...state, orgNodes: action.payload };
@@ -190,6 +212,11 @@ const AUDITED_ACTIONS = {
   CANCEL_TRANSFER: 'Cancelled budget transfer',
   ACCEPT_TRANSFER: 'Accepted budget transfer',
   REJECT_TRANSFER: 'Rejected budget transfer',
+  ADD_CHALLENGE: 'Issued budget challenge',
+  UPDATE_CHALLENGE: 'Updated budget challenge',
+  DELETE_CHALLENGE: 'Deleted budget challenge',
+  ACKNOWLEDGE_CHALLENGE: 'Acknowledged budget challenge',
+  REJECT_CHALLENGE: 'Rejected budget challenge',
   IMPORT_ORG_NODES: 'Imported organization structure from CSV',
   IMPORT_BUDGETS: 'Imported budgets from CSV',
   IMPORT_ACTUALS: 'Imported actuals from CSV',
@@ -277,6 +304,18 @@ function buildDetail(state, action) {
     case 'REJECT_TRANSFER': {
       const t = state.transfers.find(x => x.id === action.payload.id);
       return t ? `${t.amount} HC from ${getOrgTitle(t.fromOrgId)} to ${getOrgTitle(t.toOrgId)} (${t.year})` : '';
+    }
+    case 'ADD_CHALLENGE':
+    case 'UPDATE_CHALLENGE':
+      return `Reduce ${action.payload.amount} HC from ${getOrgTitle(action.payload.targetOrgId)} (${action.payload.year})`;
+    case 'DELETE_CHALLENGE': {
+      const ch = state.challenges.find(x => x.id === action.payload);
+      return ch ? `${ch.amount} HC from ${getOrgTitle(ch.targetOrgId)}` : '';
+    }
+    case 'ACKNOWLEDGE_CHALLENGE':
+    case 'REJECT_CHALLENGE': {
+      const ch = state.challenges.find(x => x.id === action.payload.id);
+      return ch ? `${ch.amount} HC from ${getOrgTitle(ch.targetOrgId)} (${ch.year})` : '';
     }
     case 'IMPORT_ORG_NODES':
       return `${action.payload.length} organization units`;
