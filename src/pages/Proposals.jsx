@@ -10,7 +10,7 @@ export default function Proposals() {
   const [editId, setEditId] = useState(null);
   const [selectedYear, setSelectedYear] = useState(currentYear);
 
-  const scopeIds = getDescendantIds(currentUserOrgId).filter(id => id !== currentUserOrgId);
+  const scopeIds = getDescendantIds(currentUserOrgId);
 
   const years = [...new Set(budgets.map(b => b.year))].sort();
   if (!years.includes(currentYear)) years.push(currentYear);
@@ -19,7 +19,7 @@ export default function Proposals() {
   const visible = proposals.filter(p => scopeIds.includes(p.orgId) && p.year === selectedYear);
 
   function openNew() {
-    setForm({ ...emptyForm, orgId: scopeIds[0] || '', requestedBy: currentUserOrgId, year: selectedYear });
+    setForm({ ...emptyForm, orgId: currentUserOrgId, requestedBy: currentUserOrgId, year: selectedYear });
     setEditId(null);
   }
 

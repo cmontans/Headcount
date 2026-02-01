@@ -8,11 +8,11 @@ export default function Requisitions() {
   const [form, setForm] = useState(null);
   const [editId, setEditId] = useState(null);
 
-  const scopeIds = getDescendantIds(currentUserOrgId).filter(id => id !== currentUserOrgId);
+  const scopeIds = getDescendantIds(currentUserOrgId);
   const visible = requisitions.filter(r => scopeIds.includes(r.orgId));
 
   function openNew() {
-    setForm({ ...emptyForm, orgId: scopeIds[0] || '', requestedBy: currentUserOrgId });
+    setForm({ ...emptyForm, orgId: currentUserOrgId, requestedBy: currentUserOrgId });
     setEditId(null);
   }
 
