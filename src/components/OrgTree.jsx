@@ -28,9 +28,7 @@ function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds }) {
           <div className="org-card-actions">
             <button className="btn-icon" title="Edit" onClick={() => onEdit(node)}>&#9998;</button>
             <button className="btn-icon" title="Add child" onClick={() => onAdd(node.id)}>&#43;</button>
-            {node.parentId !== null && (
-              <button className="btn-icon btn-icon-danger" title="Delete" onClick={() => onDelete(node)}>&#10005;</button>
-            )}
+            <button className="btn-icon btn-icon-danger" title="Delete" onClick={() => onDelete(node)}>&#10005;</button>
           </div>
         )}
       </div>
@@ -49,7 +47,7 @@ const currentYear = new Date().getFullYear();
 
 export default function OrgTree() {
   const { currentUserOrgId, orgNodes, budgets, getChildren, getDescendantIds, getHead, dispatch } = useApp();
-  const root = orgNodes.find(n => n.parentId === null);
+  const roots = orgNodes.filter(n => n.parentId === null);
   const editableIds = getDescendantIds(currentUserOrgId).filter(id => id !== currentUserOrgId);
   const [form, setForm] = useState(null);
   const [editId, setEditId] = useState(null);
@@ -118,12 +116,16 @@ export default function OrgTree() {
               {years.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </label>
-          <button className="btn btn-primary" onClick={() => openAdd(root?.id || null)}>+ Add Position</button>
+          <button className="btn btn-primary" onClick={() => openAdd(null)}>+ Add Organization</button>
+          <button className="btn" onClick={() => { if (roots.length > 0) openAdd(roots[0].id); }}>+ Add Position</button>
         </div>
       </div>
 
       <div className="org-tree">
-        {root && <OrgNode node={root} onEdit={openEdit} onAdd={openAdd} onDelete={handleDelete} selectedYear={selectedYear} editableIds={editableIds} />}
+        {roots.map(root => (
+          <OrgNode key={root.id} node={root} onEdit={openEdit} onAdd={openAdd} onDelete={handleDelete} selectedYear={selectedYear} editableIds={editableIds} />
+        ))}
+        {roots.length === 0 && <p className="empty">No organizations defined yet.</p>}
       </div>
 
       {form && (

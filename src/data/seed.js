@@ -2,6 +2,7 @@ import { v4 as uuid } from 'uuid';
 
 // --- Organization hierarchy (tree of positions, not people) ---
 const orgNodes = [
+  // Organization 1: TechCorp
   { id: 'u1', title: 'CEO', parentId: null },
   { id: 'u2', title: 'VP Engineering', parentId: 'u1' },
   { id: 'u3', title: 'VP Sales', parentId: 'u1' },
@@ -12,11 +13,19 @@ const orgNodes = [
   { id: 'u8', title: 'Dir. Sales East', parentId: 'u3' },
   { id: 'u9', title: 'Mgr. UI Team', parentId: 'u5' },
   { id: 'u10', title: 'Mgr. Platform', parentId: 'u6' },
+  // Organization 2: MediaGroup
+  { id: 'v1', title: 'CEO MediaGroup', parentId: null },
+  { id: 'v2', title: 'VP Content', parentId: 'v1' },
+  { id: 'v3', title: 'VP Marketing', parentId: 'v1' },
+  { id: 'v4', title: 'Dir. Editorial', parentId: 'v2' },
+  { id: 'v5', title: 'Dir. Digital', parentId: 'v3' },
 ];
 
 // --- Headcount budget per org node (annual) ---
 const b_u2 = uuid(), b_u3 = uuid(), b_u4 = uuid(), b_u5 = uuid(), b_u6 = uuid(), b_u7 = uuid(), b_u8 = uuid(), b_u9 = uuid(), b_u10 = uuid();
+const b_v2 = uuid(), b_v3 = uuid(), b_v4 = uuid(), b_v5 = uuid();
 const budgets = [
+  // TechCorp
   { id: b_u2, orgId: 'u2', year: 2025, budgetedHC: 40, notes: 'Engineering org budget' },
   { id: b_u3, orgId: 'u3', year: 2025, budgetedHC: 25, notes: 'Sales org budget' },
   { id: b_u4, orgId: 'u4', year: 2025, budgetedHC: 10, notes: 'Finance org budget' },
@@ -26,6 +35,11 @@ const budgets = [
   { id: b_u8, orgId: 'u8', year: 2025, budgetedHC: 13, notes: 'Sales East budget' },
   { id: b_u9, orgId: 'u9', year: 2025, budgetedHC: 8, notes: 'UI team budget' },
   { id: b_u10, orgId: 'u10', year: 2025, budgetedHC: 10, notes: 'Platform team budget' },
+  // MediaGroup
+  { id: b_v2, orgId: 'v2', year: 2025, budgetedHC: 20, notes: 'Content org budget' },
+  { id: b_v3, orgId: 'v3', year: 2025, budgetedHC: 15, notes: 'Marketing org budget' },
+  { id: b_v4, orgId: 'v4', year: 2025, budgetedHC: 12, notes: 'Editorial team budget' },
+  { id: b_v5, orgId: 'v5', year: 2025, budgetedHC: 8, notes: 'Digital team budget' },
 ];
 
 // Budget Change Proposals: requests to change the budget (delta = headcount change, positive or negative)
@@ -62,6 +76,14 @@ const actuals = [
   { id: uuid(), orgId: 'u7', name: 'Rachel Adams', role: 'Account Executive', startDate: '2024-01-15', status: 'active', isHead: false },
   { id: uuid(), orgId: 'u7', name: 'Steve Ng', role: 'Account Executive', startDate: '2024-05-01', status: 'active', isHead: false },
   { id: uuid(), orgId: 'u8', name: 'Tina Brooks', role: 'Account Executive', startDate: '2024-08-01', status: 'active', isHead: false },
+  // MediaGroup
+  { id: uuid(), orgId: 'v1', name: 'Laura Vega', role: 'CEO MediaGroup', startDate: '2019-06-01', status: 'active', isHead: true },
+  { id: uuid(), orgId: 'v2', name: 'Marco Rossi', role: 'VP Content', startDate: '2021-01-15', status: 'active', isHead: true },
+  { id: uuid(), orgId: 'v3', name: 'Sophie Dupont', role: 'VP Marketing', startDate: '2021-04-01', status: 'active', isHead: true },
+  { id: uuid(), orgId: 'v4', name: 'Kenji Tanaka', role: 'Dir. Editorial', startDate: '2022-03-01', status: 'active', isHead: true },
+  { id: uuid(), orgId: 'v5', name: 'Priya Sharma', role: 'Dir. Digital', startDate: '2022-08-01', status: 'active', isHead: true },
+  { id: uuid(), orgId: 'v4', name: 'Nina Costa', role: 'Senior Editor', startDate: '2023-05-01', status: 'active', isHead: false },
+  { id: uuid(), orgId: 'v5', name: 'Alex Turner', role: 'Digital Strategist', startDate: '2023-09-15', status: 'active', isHead: false },
 ];
 
 // Job Requisitions: requests to fill a specific position (new or substitution)

@@ -233,7 +233,7 @@
 }
 
 /* ---- Org Tree ---- */
-.org-tree { display: flex; justify-content: center; padding: 1rem 0; overflow-x: auto; }
+.org-tree { display: flex; justify-content: center; gap: 2rem; padding: 1rem 0; overflow-x: auto; flex-wrap: wrap; }
 .org-node { display: flex; flex-direction: column; align-items: center; }
 .org-card {
   display: flex;
