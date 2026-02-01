@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
 function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds }) {
-  const { getChildren, proposals, budgets, getActualCount, getHead } = useApp();
+  const { getChildren, proposals, budgets, requisitions, transfers, challenges, getActualCount, getHead } = useApp();
   const children = getChildren(node.id);
   const actualCount = getActualCount(node.id);
   const pendingDelta = proposals.filter(p => p.orgId === node.id && p.year === selectedYear && p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
@@ -10,6 +10,10 @@ function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds }) {
   const head = getHead(node.id);
   const canEdit = editableIds.includes(node.id);
   const [collapsed, setCollapsed] = useState(false);
+
+  const openReqs = requisitions.filter(r => r.orgId === node.id && r.status === 'pending_approval').length;
+  const pendingTransfers = transfers.filter(t => (t.toOrgId === node.id || t.fromOrgId === node.id) && t.year === selectedYear && t.status === 'pending_acceptance').length;
+  const pendingChallenges = challenges.filter(c => c.targetOrgId === node.id && c.year === selectedYear && c.status === 'pending').length;
 
   return (
     <div className="org-node">
@@ -28,7 +32,10 @@ function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds }) {
         <div className="org-stats">
           {budget && <span title="Budget">B:{budget.budgetedHC}</span>}
           <span title="Actuals">A:{actualCount}</span>
-          {pendingDelta !== 0 && <span title="Pending budget change">P:{pendingDelta > 0 ? '+' : ''}{pendingDelta}</span>}
+          {pendingDelta !== 0 && <span title="Pending budget proposals" className="text-warning">P:{pendingDelta > 0 ? '+' : ''}{pendingDelta}</span>}
+          {openReqs > 0 && <span title="Open requisitions" className="text-info">R:{openReqs}</span>}
+          {pendingTransfers > 0 && <span title="Pending transfers" className="text-warning">T:{pendingTransfers}</span>}
+          {pendingChallenges > 0 && <span title="Pending challenges" className="text-danger">C:{pendingChallenges}</span>}
           {collapsed && children.length > 0 && <span title="Hidden children" className="org-collapsed-hint">[{children.length}]</span>}
         </div>
         {canEdit && (
