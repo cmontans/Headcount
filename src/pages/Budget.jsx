@@ -9,7 +9,7 @@ export default function Budget() {
   const [editId, setEditId] = useState(null);
   const [selectedYear, setSelectedYear] = useState(currentYear);
 
-  const scopeIds = getDescendantIds(currentUserOrgId);
+  const scopeIds = getDescendantIds(currentUserOrgId).filter(id => id !== currentUserOrgId);
 
   const years = [...new Set(budgets.map(b => b.year))].sort();
   if (!years.includes(currentYear)) years.push(currentYear);
@@ -18,7 +18,7 @@ export default function Budget() {
   const visible = budgets.filter(b => scopeIds.includes(b.orgId) && b.year === selectedYear);
 
   function openNew() {
-    setForm({ orgId: currentUserOrgId, year: selectedYear, budgetedHC: 0, notes: '' });
+    setForm({ orgId: scopeIds[0] || '', year: selectedYear, budgetedHC: 0, notes: '' });
     setEditId(null);
   }
 

@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
-function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear }) {
+function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds }) {
   const { getChildren, proposals, budgets, getActualCount, getHead } = useApp();
   const children = getChildren(node.id);
   const actualCount = getActualCount(node.id);
   const pendingDelta = proposals.filter(p => p.orgId === node.id && p.year === selectedYear && p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
   const budget = budgets.find(b => b.orgId === node.id && b.year === selectedYear);
   const head = getHead(node.id);
+  const canEdit = editableIds.includes(node.id);
 
   return (
     <div className="org-node">
@@ -23,17 +24,19 @@ function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear }) {
           <span title="Actuals">A:{actualCount}</span>
           {pendingDelta !== 0 && <span title="Pending budget change">P:{pendingDelta > 0 ? '+' : ''}{pendingDelta}</span>}
         </div>
-        <div className="org-card-actions">
-          <button className="btn-icon" title="Edit" onClick={() => onEdit(node)}>&#9998;</button>
-          <button className="btn-icon" title="Add child" onClick={() => onAdd(node.id)}>&#43;</button>
-          {node.parentId !== null && (
-            <button className="btn-icon btn-icon-danger" title="Delete" onClick={() => onDelete(node)}>&#10005;</button>
-          )}
-        </div>
+        {canEdit && (
+          <div className="org-card-actions">
+            <button className="btn-icon" title="Edit" onClick={() => onEdit(node)}>&#9998;</button>
+            <button className="btn-icon" title="Add child" onClick={() => onAdd(node.id)}>&#43;</button>
+            {node.parentId !== null && (
+              <button className="btn-icon btn-icon-danger" title="Delete" onClick={() => onDelete(node)}>&#10005;</button>
+            )}
+          </div>
+        )}
       </div>
       {children.length > 0 && (
         <div className="org-children">
-          {children.map(c => <OrgNode key={c.id} node={c} onEdit={onEdit} onAdd={onAdd} onDelete={onDelete} selectedYear={selectedYear} />)}
+          {children.map(c => <OrgNode key={c.id} node={c} onEdit={onEdit} onAdd={onAdd} onDelete={onDelete} selectedYear={selectedYear} editableIds={editableIds} />)}
         </div>
       )}
     </div>
@@ -45,8 +48,9 @@ const emptyForm = { title: '', parentId: '' };
 const currentYear = new Date().getFullYear();
 
 export default function OrgTree() {
-  const { orgNodes, budgets, getChildren, getDescendantIds, getHead, dispatch } = useApp();
+  const { currentUserOrgId, orgNodes, budgets, getChildren, getDescendantIds, getHead, dispatch } = useApp();
   const root = orgNodes.find(n => n.parentId === null);
+  const editableIds = getDescendantIds(currentUserOrgId).filter(id => id !== currentUserOrgId);
   const [form, setForm] = useState(null);
   const [editId, setEditId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -119,7 +123,7 @@ export default function OrgTree() {
       </div>
 
       <div className="org-tree">
-        {root && <OrgNode node={root} onEdit={openEdit} onAdd={openAdd} onDelete={handleDelete} selectedYear={selectedYear} />}
+        {root && <OrgNode node={root} onEdit={openEdit} onAdd={openAdd} onDelete={handleDelete} selectedYear={selectedYear} editableIds={editableIds} />}
       </div>
 
       {form && (
