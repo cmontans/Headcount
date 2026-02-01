@@ -4,14 +4,10 @@ import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import OrgTree from './components/OrgTree';
 import BudgetManagement from './pages/BudgetManagement';
-import Approvals from './pages/Approvals';
+import ActualsManagement from './pages/ActualsManagement';
 import Budget from './pages/Budget';
-import Actuals from './pages/Actuals';
-import Requisitions from './pages/Requisitions';
 import BudgetTimeline from './pages/BudgetTimeline';
-import AuditLog from './pages/AuditLog';
-import DataSync from './pages/DataSync';
-import UserGuide from './pages/UserGuide';
+import Admin from './pages/Admin';
 import './App.css';
 
 export default function App() {
@@ -24,14 +20,10 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/org" element={<OrgTree />} />
             <Route path="/budget-management" element={<BudgetManagement />} />
-            <Route path="/approvals" element={<Approvals />} />
+            <Route path="/actuals-management" element={<ActualsManagement />} />
             <Route path="/budget" element={<Budget />} />
-            <Route path="/actuals" element={<Actuals />} />
-            <Route path="/requisitions" element={<Requisitions />} />
             <Route path="/budget-timeline" element={<BudgetTimeline />} />
-            <Route path="/audit-log" element={<AuditLog />} />
-            <Route path="/data-sync" element={<DataSync />} />
-            <Route path="/guide" element={<UserGuide />} />
+            <Route path="/admin" element={<Admin />} />
           </Routes>
         </main>
       </BrowserRouter>

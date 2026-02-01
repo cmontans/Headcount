@@ -9,14 +9,10 @@ export default function Navbar() {
         <NavLink to="/">Dashboard</NavLink>
         <NavLink to="/org">Organization</NavLink>
         <NavLink to="/budget-management">Budget Mgmt</NavLink>
-        <NavLink to="/approvals">Approvals</NavLink>
+        <NavLink to="/actuals-management">Actuals Mgmt</NavLink>
         <NavLink to="/budget">Budget</NavLink>
-        <NavLink to="/actuals">Actuals</NavLink>
-        <NavLink to="/requisitions">Requisitions</NavLink>
         <NavLink to="/budget-timeline">Timeline</NavLink>
-        <NavLink to="/audit-log">Audit Log</NavLink>
-        <NavLink to="/data-sync">Data Sync</NavLink>
-        <NavLink to="/guide">Guide</NavLink>
+        <NavLink to="/admin">Admin</NavLink>
       </div>
       <UserSwitcher />
     </nav>
