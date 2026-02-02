@@ -386,6 +386,21 @@
 .timeline-info { font-size: 0.82rem; }
 .timeline-event-label { font-weight: 500; }
 
+/* ---- Org Legend ---- */
+.org-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+}
+.org-legend span strong { margin-right: 0.2rem; }
+
 /* ---- View Toggle ---- */
 .view-toggle { display: inline-flex; gap: 0; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .view-toggle .btn { border: none; border-radius: 0; border-right: 1px solid var(--border); }

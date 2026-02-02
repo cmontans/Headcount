@@ -164,6 +164,25 @@ export default function OrgTree() {
         </div>
       </div>
 
+      <div className="org-legend">
+        {viewMode === 'individual' ? (
+          <>
+            <span><strong>B</strong> Budget</span>
+            <span><strong>A</strong> Actuals</span>
+          </>
+        ) : (
+          <>
+            <span><strong>&Sigma;B</strong> Accumulated Budget</span>
+            <span><strong>&Sigma;A</strong> Accumulated Actuals</span>
+          </>
+        )}
+        <span><strong>&Delta;</strong> Delta (budget − actuals)</span>
+        <span className="text-warning"><strong>P</strong> Pending Proposals</span>
+        <span className="text-info"><strong>R</strong> Open Requisitions</span>
+        <span className="text-warning"><strong>T</strong> Pending Transfers</span>
+        <span className="text-danger"><strong>C</strong> Pending Challenges</span>
+      </div>
+
       <div className="org-tree">
         {roots.map(root => (
           <OrgNode key={root.id} node={root} onEdit={openEdit} onAdd={openAdd} onDelete={handleDelete} selectedYear={selectedYear} editableIds={editableIds} viewMode={viewMode} />
