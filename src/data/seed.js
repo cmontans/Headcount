@@ -27,19 +27,19 @@ const b_v2 = uuid(), b_v3 = uuid(), b_v4 = uuid(), b_v5 = uuid();
 const budgets = [
   // TechCorp
   { id: b_u2, orgId: 'u2', year: 2025, budgetedHC: 40, notes: 'Engineering org budget' },
-  { id: b_u3, orgId: 'u3', year: 2025, budgetedHC: 25, notes: 'Sales org budget' },
-  { id: b_u4, orgId: 'u4', year: 2025, budgetedHC: 10, notes: 'Finance org budget' },
-  { id: b_u5, orgId: 'u5', year: 2025, budgetedHC: 15, notes: 'Frontend team budget' },
-  { id: b_u6, orgId: 'u6', year: 2025, budgetedHC: 20, notes: 'Backend team budget' },
-  { id: b_u7, orgId: 'u7', year: 2025, budgetedHC: 12, notes: 'Sales West budget' },
+  { id: b_u3, orgId: 'u3', year: 2025, budgetedHC: 26, notes: 'Sales org budget' },
+  { id: b_u4, orgId: 'u4', year: 2025, budgetedHC: 9, notes: 'Finance org budget' },
+  { id: b_u5, orgId: 'u5', year: 2025, budgetedHC: 16, notes: 'Frontend team budget' },
+  { id: b_u6, orgId: 'u6', year: 2025, budgetedHC: 19, notes: 'Backend team budget' },
+  { id: b_u7, orgId: 'u7', year: 2025, budgetedHC: 11, notes: 'Sales West budget' },
   { id: b_u8, orgId: 'u8', year: 2025, budgetedHC: 13, notes: 'Sales East budget' },
-  { id: b_u9, orgId: 'u9', year: 2025, budgetedHC: 8, notes: 'UI team budget' },
+  { id: b_u9, orgId: 'u9', year: 2025, budgetedHC: 9, notes: 'UI team budget' },
   { id: b_u10, orgId: 'u10', year: 2025, budgetedHC: 10, notes: 'Platform team budget' },
   // MediaGroup
-  { id: b_v2, orgId: 'v2', year: 2025, budgetedHC: 20, notes: 'Content org budget' },
-  { id: b_v3, orgId: 'v3', year: 2025, budgetedHC: 15, notes: 'Marketing org budget' },
-  { id: b_v4, orgId: 'v4', year: 2025, budgetedHC: 12, notes: 'Editorial team budget' },
-  { id: b_v5, orgId: 'v5', year: 2025, budgetedHC: 8, notes: 'Digital team budget' },
+  { id: b_v2, orgId: 'v2', year: 2025, budgetedHC: 21, notes: 'Content org budget' },
+  { id: b_v3, orgId: 'v3', year: 2025, budgetedHC: 14, notes: 'Marketing org budget' },
+  { id: b_v4, orgId: 'v4', year: 2025, budgetedHC: 11, notes: 'Editorial team budget' },
+  { id: b_v5, orgId: 'v5', year: 2025, budgetedHC: 9, notes: 'Digital team budget' },
 ];
 
 // Budget Change Proposals: requests to change the budget (delta = headcount change, positive or negative)

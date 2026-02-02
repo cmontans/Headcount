@@ -459,9 +459,13 @@ function TimelineSection({ selectedYear }) {
   function buildTimeline(orgId, year) {
     const events = [];
     const budget = budgets.find(b => b.orgId === orgId && b.year === year);
-    const baseHC = budget ? budget.budgetedHC : 0;
+    const currentHC = budget ? budget.budgetedHC : 0;
+
+    // Collect confirmed events to reverse-compute the baseline
+    const confirmedDeltas = [];
 
     proposals.filter(p => p.orgId === orgId && p.year === year && p.status === 'approved').forEach(p => {
+      confirmedDeltas.push(p.delta);
       events.push({ date: p.createdAt, type: 'proposal', label: p.title, delta: p.delta, status: p.status, detail: `Proposal approved: ${p.delta > 0 ? '+' : ''}${p.delta} HC — ${p.justification}` });
     });
     proposals.filter(p => p.orgId === orgId && p.year === year && p.status === 'pending_approval').forEach(p => {
@@ -469,10 +473,12 @@ function TimelineSection({ selectedYear }) {
     });
     transfers.filter(t => t.toOrgId === orgId && t.year === year && t.status === 'accepted').forEach(t => {
       const fromNode = getNode(t.fromOrgId);
+      confirmedDeltas.push(t.amount);
       events.push({ date: t.createdAt, type: 'transfer_in', label: `Transfer from ${fromNode?.title || t.fromOrgId}`, delta: t.amount, status: t.status, detail: `Received ${t.amount} HC from ${fromNode?.title} — ${t.reason}` });
     });
     transfers.filter(t => t.fromOrgId === orgId && t.year === year && t.status === 'accepted').forEach(t => {
       const toNode = getNode(t.toOrgId);
+      confirmedDeltas.push(-t.amount);
       events.push({ date: t.createdAt, type: 'transfer_out', label: `Transfer to ${toNode?.title || t.toOrgId}`, delta: -t.amount, status: t.status, detail: `Sent ${t.amount} HC to ${toNode?.title} — ${t.reason}` });
     });
     transfers.filter(t => (t.toOrgId === orgId || t.fromOrgId === orgId) && t.year === year && t.status === 'pending_acceptance').forEach(t => {
@@ -482,6 +488,7 @@ function TimelineSection({ selectedYear }) {
     });
     challenges.filter(c => c.targetOrgId === orgId && c.year === year && c.status === 'acknowledged').forEach(c => {
       const issuerNode = getNode(c.issuedBy);
+      confirmedDeltas.push(-c.amount);
       events.push({ date: c.createdAt, type: 'challenge', label: `Challenge from ${issuerNode?.title || c.issuedBy}`, delta: -c.amount, status: c.status, detail: `Budget challenge acknowledged: -${c.amount} HC — ${c.reason}` });
     });
     challenges.filter(c => c.targetOrgId === orgId && c.year === year && c.status === 'pending').forEach(c => {
@@ -489,11 +496,14 @@ function TimelineSection({ selectedYear }) {
       events.push({ date: c.createdAt, type: 'challenge_pending', label: `Pending challenge from ${issuerNode?.title || c.issuedBy}`, delta: -c.amount, status: c.status, detail: `Pending challenge: -${c.amount} HC — ${c.reason}` });
     });
 
+    // baseHC = original budget before any confirmed events were applied
+    const baseHC = currentHC - confirmedDeltas.reduce((s, d) => s + d, 0);
+
     events.sort((a, b) => a.date.localeCompare(b.date));
-    return { baseHC, events };
+    return { baseHC, currentHC, events };
   }
 
-  const { baseHC, events } = buildTimeline(selectedOrg, selectedYear);
+  const { baseHC, currentHC, events } = buildTimeline(selectedOrg, selectedYear);
 
   let runningConfirmed = baseHC;
   let runningProjected = baseHC;
@@ -526,8 +536,8 @@ function TimelineSection({ selectedYear }) {
 
       <div className="timeline-summary">
         <div className="kpi-grid">
-          <div className="kpi-card"><div className="kpi-value">{baseHC}</div><div className="kpi-label">Current Budget</div></div>
-          <div className="kpi-card"><div className="kpi-value" style={{ color: runningConfirmed !== baseHC ? (runningConfirmed > baseHC ? 'var(--success)' : 'var(--danger)') : undefined }}>{runningConfirmed}</div><div className="kpi-label">After Confirmed</div></div>
+          <div className="kpi-card"><div className="kpi-value">{baseHC}</div><div className="kpi-label">Baseline Budget</div></div>
+          <div className="kpi-card"><div className="kpi-value">{currentHC}</div><div className="kpi-label">Current Budget</div></div>
           {runningProjected !== runningConfirmed && <div className="kpi-card"><div className="kpi-value" style={{ color: '#f59e0b' }}>{runningProjected}</div><div className="kpi-label">Projected (incl. pending)</div></div>}
           <div className="kpi-card"><div className="kpi-value">{events.length}</div><div className="kpi-label">Budget Events</div></div>
         </div>
