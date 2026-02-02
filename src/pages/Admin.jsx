@@ -302,11 +302,19 @@ function GuideSection() {
 /* ───────── Main Admin Page ───────── */
 export default function Admin() {
   const [activeTab, setActiveTab] = useState('Audit Log');
+  const { dispatch } = useApp();
+
+  function handleReset() {
+    if (window.confirm('Reset all data to default seed values? This cannot be undone.')) {
+      dispatch({ type: 'RESET_TO_SEED' });
+    }
+  }
 
   return (
     <div className="page">
       <div className="page-header">
         <h2>Administration</h2>
+        <button className="btn btn-danger" onClick={handleReset}>Reset to Defaults</button>
       </div>
       <div className="tabs">
         {TABS.map(tab => (

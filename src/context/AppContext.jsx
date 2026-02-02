@@ -4,11 +4,33 @@ import { orgNodes as seedOrg, budgets as seedBudgets, proposals as seedProposals
 
 const AppContext = createContext();
 
+const STORAGE_KEY = 'headcount_app_state';
+
+function loadPersistedState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    // corrupted data — fall through to seed
+  }
+  return null;
+}
+
+function persistState(state) {
+  try {
+    const { auditLog, ...rest } = state;
+    // Keep only last 500 audit entries to avoid exceeding localStorage quota
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...rest, auditLog: auditLog.slice(0, 500) }));
+  } catch (e) {
+    // quota exceeded — silently fail
+  }
+}
+
 // Current user is identified by the head actual of an org unit
 const initialHead = seedActuals.find(a => a.orgId === seedOrg[0].id && a.isHead);
 
-const initialState = {
-  currentUserId: initialHead?.id || null, // actual id of the acting user
+const seedState = {
+  currentUserId: initialHead?.id || null,
   orgNodes: seedOrg,
   budgets: seedBudgets,
   proposals: seedProposals,
@@ -19,10 +41,15 @@ const initialState = {
   auditLog: [],
 };
 
+const initialState = loadPersistedState() || seedState;
+
 function reducer(state, action) {
   switch (action.type) {
-    case 'SET_USER':
-      return { ...state, currentUserId: action.payload };
+    case 'SET_USER': {
+      const s = { ...state, currentUserId: action.payload };
+      persistState(s);
+      return s;
+    }
 
     // --- Proposals (budget change requests) ---
     case 'ADD_PROPOSAL':
@@ -328,6 +355,10 @@ function buildDetail(state, action) {
 }
 
 function auditReducer(state, action) {
+  if (action.type === 'RESET_TO_SEED') {
+    localStorage.removeItem(STORAGE_KEY);
+    return seedState;
+  }
   const detail = AUDITED_ACTIONS[action.type] ? buildDetail(state, action) : '';
   const newState = reducer(state, action);
   const description = AUDITED_ACTIONS[action.type];
@@ -340,7 +371,9 @@ function auditReducer(state, action) {
     userId: state.currentUserId,
     timestamp: new Date().toISOString(),
   };
-  return { ...newState, auditLog: [entry, ...newState.auditLog] };
+  const finalState = { ...newState, auditLog: [entry, ...newState.auditLog] };
+  persistState(finalState);
+  return finalState;
 }
 
 export function AppProvider({ children }) {
