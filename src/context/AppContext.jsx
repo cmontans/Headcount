@@ -63,18 +63,10 @@ function reducer(state, action) {
     case 'APPROVE_PROPOSAL': {
       const proposal = state.proposals.find(p => p.id === action.payload.id);
       if (!proposal) return state;
-      // Collect orgs from the approver down to the requesting org
       const approverOrg = action.payload.approvedBy;
-      const affectedOrgIds = [];
-      let current = proposal.orgId;
-      while (current) {
-        affectedOrgIds.push(current);
-        if (current === approverOrg) break;
-        const node = state.orgNodes.find(n => n.id === current);
-        current = node?.parentId || null;
-      }
+      // Only apply delta to the target org's budget (no downstream propagation)
       const updatedBudgets = state.budgets.map(b =>
-        affectedOrgIds.includes(b.orgId) && b.year === proposal.year ? { ...b, budgetedHC: b.budgetedHC + proposal.delta } : b
+        b.orgId === proposal.orgId && b.year === proposal.year ? { ...b, budgetedHC: b.budgetedHC + proposal.delta } : b
       );
       const updatedProposals = state.proposals.map(p =>
         p.id === action.payload.id ? { ...p, status: 'approved', approvedBy: approverOrg } : p
@@ -409,6 +401,20 @@ export function AppProvider({ children }) {
     return state.actuals.find(a => a.orgId === orgId && a.isHead && a.status === 'active') || null;
   }, [state.actuals]);
 
+  // Accumulated budget: own budget + all descendants' budgets for a given year
+  const getAccumulatedBudget = useCallback((orgId, year) => {
+    const descIds = getDescendantIds(orgId);
+    return state.budgets
+      .filter(b => descIds.includes(b.orgId) && b.year === year)
+      .reduce((sum, b) => sum + b.budgetedHC, 0);
+  }, [state.budgets, getDescendantIds]);
+
+  // Accumulated actuals: own actuals + all descendants' actuals
+  const getAccumulatedActuals = useCallback((orgId) => {
+    const descIds = getDescendantIds(orgId);
+    return state.actuals.filter(a => descIds.includes(a.orgId) && a.status === 'active').length;
+  }, [state.actuals, getDescendantIds]);
+
   // Current user derived from currentUserId
   const currentUser = state.actuals.find(a => a.id === state.currentUserId) || null;
   // The org unit the current user heads
@@ -426,6 +432,8 @@ export function AppProvider({ children }) {
       getNode,
       getActualCount,
       getHead,
+      getAccumulatedBudget,
+      getAccumulatedActuals,
     }}>
       {children}
     </AppContext.Provider>

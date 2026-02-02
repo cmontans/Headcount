@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
 function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds }) {
-  const { getChildren, proposals, budgets, requisitions, transfers, challenges, getActualCount, getHead } = useApp();
+  const { getChildren, proposals, budgets, requisitions, transfers, challenges, getActualCount, getHead, getAccumulatedBudget, getAccumulatedActuals } = useApp();
   const children = getChildren(node.id);
   const actualCount = getActualCount(node.id);
   const pendingDelta = proposals.filter(p => p.orgId === node.id && p.year === selectedYear && p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
@@ -14,6 +14,10 @@ function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds }) {
   const openReqs = requisitions.filter(r => r.orgId === node.id && r.status === 'pending_approval').length;
   const pendingTransfers = transfers.filter(t => (t.toOrgId === node.id || t.fromOrgId === node.id) && t.year === selectedYear && t.status === 'pending_acceptance').length;
   const pendingChallenges = challenges.filter(c => c.targetOrgId === node.id && c.year === selectedYear && c.status === 'pending').length;
+
+  const hasChildren = children.length > 0;
+  const accBudget = hasChildren ? getAccumulatedBudget(node.id, selectedYear) : null;
+  const accActuals = hasChildren ? getAccumulatedActuals(node.id) : null;
 
   return (
     <div className="org-node">
@@ -30,8 +34,10 @@ function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds }) {
           <span className="org-head-vacant">Vacant</span>
         )}
         <div className="org-stats">
-          {budget && <span title="Budget">B:{budget.budgetedHC}</span>}
-          <span title="Actuals">A:{actualCount}</span>
+          {budget && <span title="Own budget">B:{budget.budgetedHC}</span>}
+          <span title="Own actuals">A:{actualCount}</span>
+          {hasChildren && accBudget != null && <span title="Accumulated budget (own + descendants)" className="text-accent">&Sigma;B:{accBudget}</span>}
+          {hasChildren && accActuals != null && <span title="Accumulated actuals (own + descendants)" className="text-accent">&Sigma;A:{accActuals}</span>}
           {pendingDelta !== 0 && <span title="Pending budget proposals" className="text-warning">P:{pendingDelta > 0 ? '+' : ''}{pendingDelta}</span>}
           {openReqs > 0 && <span title="Open requisitions" className="text-info">R:{openReqs}</span>}
           {pendingTransfers > 0 && <span title="Pending transfers" className="text-warning">T:{pendingTransfers}</span>}
