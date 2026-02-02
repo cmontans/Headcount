@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
-function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds }) {
+function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds, viewMode }) {
   const { getChildren, proposals, budgets, requisitions, transfers, challenges, getActualCount, getHead, getAccumulatedBudget, getAccumulatedActuals } = useApp();
   const children = getChildren(node.id);
   const actualCount = getActualCount(node.id);
@@ -32,19 +32,27 @@ function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds }) {
         ) : (
           <span className="org-head-vacant">Vacant</span>
         )}
-        <div className="org-stats">
-          {budget && <span title="Own budget">B:{budget.budgetedHC}</span>}
-          <span title="Own actuals">A:{actualCount}</span>
-        </div>
-        <div className="org-stats">
-          <span title="Accumulated budget (own + descendants)" className="text-accent">&Sigma;B:{accBudget}</span>
-          <span title="Accumulated actuals (own + descendants)" className="text-accent">&Sigma;A:{accActuals}</span>
-          {pendingDelta !== 0 && <span title="Pending budget proposals" className="text-warning">P:{pendingDelta > 0 ? '+' : ''}{pendingDelta}</span>}
-          {openReqs > 0 && <span title="Open requisitions" className="text-info">R:{openReqs}</span>}
-          {pendingTransfers > 0 && <span title="Pending transfers" className="text-warning">T:{pendingTransfers}</span>}
-          {pendingChallenges > 0 && <span title="Pending challenges" className="text-danger">C:{pendingChallenges}</span>}
-          {collapsed && children.length > 0 && <span title="Hidden children" className="org-collapsed-hint">[{children.length}]</span>}
-        </div>
+        {viewMode === 'individual' && (
+          <div className="org-stats">
+            {budget && <span title="Own budget">B:{budget.budgetedHC}</span>}
+            <span title="Own actuals">A:{actualCount}</span>
+            {pendingDelta !== 0 && <span title="Pending budget proposals" className="text-warning">P:{pendingDelta > 0 ? '+' : ''}{pendingDelta}</span>}
+            {openReqs > 0 && <span title="Open requisitions" className="text-info">R:{openReqs}</span>}
+            {pendingTransfers > 0 && <span title="Pending transfers" className="text-warning">T:{pendingTransfers}</span>}
+            {pendingChallenges > 0 && <span title="Pending challenges" className="text-danger">C:{pendingChallenges}</span>}
+          </div>
+        )}
+        {viewMode === 'accumulated' && (
+          <div className="org-stats">
+            <span title="Accumulated budget (own + descendants)" className="text-accent">&Sigma;B:{accBudget}</span>
+            <span title="Accumulated actuals (own + descendants)" className="text-accent">&Sigma;A:{accActuals}</span>
+            {pendingDelta !== 0 && <span title="Pending budget proposals" className="text-warning">P:{pendingDelta > 0 ? '+' : ''}{pendingDelta}</span>}
+            {openReqs > 0 && <span title="Open requisitions" className="text-info">R:{openReqs}</span>}
+            {pendingTransfers > 0 && <span title="Pending transfers" className="text-warning">T:{pendingTransfers}</span>}
+            {pendingChallenges > 0 && <span title="Pending challenges" className="text-danger">C:{pendingChallenges}</span>}
+          </div>
+        )}
+        {collapsed && children.length > 0 && <div className="org-stats"><span title="Hidden children" className="org-collapsed-hint">[{children.length}]</span></div>}
         {canEdit && (
           <div className="org-card-actions">
             <button className="btn-icon" title="Edit" onClick={() => onEdit(node)}>&#9998;</button>
@@ -55,7 +63,7 @@ function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds }) {
       </div>
       {children.length > 0 && !collapsed && (
         <div className="org-children">
-          {children.map(c => <OrgNode key={c.id} node={c} onEdit={onEdit} onAdd={onAdd} onDelete={onDelete} selectedYear={selectedYear} editableIds={editableIds} />)}
+          {children.map(c => <OrgNode key={c.id} node={c} onEdit={onEdit} onAdd={onAdd} onDelete={onDelete} selectedYear={selectedYear} editableIds={editableIds} viewMode={viewMode} />)}
         </div>
       )}
     </div>
@@ -74,6 +82,7 @@ export default function OrgTree() {
   const [editId, setEditId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [viewMode, setViewMode] = useState('individual'); // 'individual' | 'accumulated'
 
   const years = [...new Set(budgets.map(b => b.year))].sort();
   if (!years.includes(currentYear)) years.push(currentYear);
@@ -130,13 +139,17 @@ export default function OrgTree() {
     <div className="page">
       <div className="page-header">
         <h2>Organization Hierarchy</h2>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <label className="year-selector">
             Period:&nbsp;
             <select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))}>
               {years.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </label>
+          <div className="view-toggle">
+            <button className={`btn btn-sm ${viewMode === 'individual' ? 'btn-primary' : ''}`} onClick={() => setViewMode('individual')}>Individual</button>
+            <button className={`btn btn-sm ${viewMode === 'accumulated' ? 'btn-primary' : ''}`} onClick={() => setViewMode('accumulated')}>Accumulated</button>
+          </div>
           <button className="btn btn-primary" onClick={() => openAdd(null)}>+ Add Organization</button>
           <button className="btn" onClick={() => { if (roots.length > 0) openAdd(roots[0].id); }}>+ Add Position</button>
         </div>
@@ -144,7 +157,7 @@ export default function OrgTree() {
 
       <div className="org-tree">
         {roots.map(root => (
-          <OrgNode key={root.id} node={root} onEdit={openEdit} onAdd={openAdd} onDelete={handleDelete} selectedYear={selectedYear} editableIds={editableIds} />
+          <OrgNode key={root.id} node={root} onEdit={openEdit} onAdd={openAdd} onDelete={handleDelete} selectedYear={selectedYear} editableIds={editableIds} viewMode={viewMode} />
         ))}
         {roots.length === 0 && <p className="empty">No organizations defined yet.</p>}
       </div>
