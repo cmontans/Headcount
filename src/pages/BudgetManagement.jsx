@@ -5,7 +5,7 @@ const currentYear = new Date().getFullYear();
 
 /* ───── Proposals sub-section ───── */
 function ProposalsSection({ selectedYear }) {
-  const { currentUserOrgId, proposals, budgets, getDescendantIds, getNode, getHead, dispatch } = useApp();
+  const { currentUserOrgId, proposals, budgets, getDescendantIds, getNode, getHead, getAccumulatedBudget, dispatch } = useApp();
   const [form, setForm] = useState(null);
   const [editId, setEditId] = useState(null);
 
@@ -88,22 +88,24 @@ function ProposalsSection({ selectedYear }) {
       <table className="table">
         <thead>
           <tr>
-            <th>Team</th><th>Proposal</th><th>Delta</th><th>Status</th><th>Requested By</th><th>Approved By</th><th>Date</th><th>Actions</th>
+            <th>Team</th><th>Proposal</th><th>Delta</th><th>Budget</th><th>&Sigma; Budget</th><th>Status</th><th>Requested By</th><th>Date</th><th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {visible.map(p => {
             const node = getNode(p.orgId);
             const requestorHead = getHead(p.requestedBy);
-            const approverHead = p.approvedBy ? getHead(p.approvedBy) : null;
+            const budget = budgets.find(b => b.orgId === p.orgId && b.year === p.year);
+            const accBudget = getAccumulatedBudget(p.orgId, p.year);
             return (
               <tr key={p.id}>
                 <td>{node?.title || p.orgId}</td>
                 <td>{p.title}</td>
                 <td>{formatDelta(p.delta)}</td>
+                <td>{budget ? budget.budgetedHC : '—'}</td>
+                <td className="text-accent">{accBudget}</td>
                 <td>{statusBadge(p.status)}</td>
                 <td>{requestorHead?.name || '—'}</td>
-                <td>{approverHead?.name || '—'}</td>
                 <td>{p.createdAt}</td>
                 <td className="actions">
                   {p.status === 'draft' && (
@@ -123,7 +125,7 @@ function ProposalsSection({ selectedYear }) {
               </tr>
             );
           })}
-          {visible.length === 0 && <tr><td colSpan="8" className="empty">No budget change proposals in your scope</td></tr>}
+          {visible.length === 0 && <tr><td colSpan="9" className="empty">No budget change proposals in your scope</td></tr>}
         </tbody>
       </table>
     </>
@@ -132,7 +134,7 @@ function ProposalsSection({ selectedYear }) {
 
 /* ───── Transfers sub-section ───── */
 function TransfersSection({ selectedYear }) {
-  const { currentUserOrgId, transfers, budgets, orgNodes, getDescendantIds, getNode, getHead, dispatch } = useApp();
+  const { currentUserOrgId, transfers, budgets, orgNodes, getDescendantIds, getNode, getHead, getAccumulatedBudget, dispatch } = useApp();
   const [form, setForm] = useState(null);
   const [editId, setEditId] = useState(null);
 
@@ -252,24 +254,24 @@ function TransfersSection({ selectedYear }) {
 
       <table className="table" style={{ marginTop: incoming.length > 0 ? '1rem' : 0 }}>
         <thead>
-          <tr><th>From</th><th>To</th><th>Amount</th><th>Reason</th><th>Status</th><th>Proposed By</th><th>Accepted By</th><th>Date</th><th>Actions</th></tr>
+          <tr><th>From</th><th>&Sigma; From</th><th>To</th><th>&Sigma; To</th><th>Amount</th><th>Reason</th><th>Status</th><th>Date</th><th>Actions</th></tr>
         </thead>
         <tbody>
           {visible.map(t => {
             const fromNode = getNode(t.fromOrgId);
             const toNode = getNode(t.toOrgId);
-            const proposerHead = getHead(t.proposedBy);
-            const accepterHead = t.acceptedBy ? getHead(t.acceptedBy) : null;
+            const accFrom = getAccumulatedBudget(t.fromOrgId, t.year);
+            const accTo = getAccumulatedBudget(t.toOrgId, t.year);
             const isMine = scopeIds.includes(t.fromOrgId);
             return (
               <tr key={t.id}>
                 <td>{fromNode?.title}</td>
+                <td className="text-accent">{accFrom}</td>
                 <td>{toNode?.title}</td>
+                <td className="text-accent">{accTo}</td>
                 <td><strong>{t.amount}</strong></td>
                 <td>{t.reason}</td>
                 <td>{statusBadge(t.status)}</td>
-                <td>{proposerHead?.name || '—'}</td>
-                <td>{accepterHead?.name || '—'}</td>
                 <td>{t.createdAt}</td>
                 <td className="actions">
                   {t.status === 'pending_acceptance' && isMine && (
@@ -289,6 +291,7 @@ function TransfersSection({ selectedYear }) {
             );
           })}
           {visible.length === 0 && <tr><td colSpan="9" className="empty">No budget transfers for this period</td></tr>}
+
         </tbody>
       </table>
     </>
@@ -297,7 +300,7 @@ function TransfersSection({ selectedYear }) {
 
 /* ───── Challenges sub-section ───── */
 function ChallengesSection({ selectedYear }) {
-  const { currentUserOrgId, challenges, budgets, getDescendantIds, getNode, getHead, getActualCount, dispatch } = useApp();
+  const { currentUserOrgId, challenges, budgets, getDescendantIds, getNode, getHead, getActualCount, getAccumulatedBudget, dispatch } = useApp();
   const [form, setForm] = useState(null);
   const [editId, setEditId] = useState(null);
 
@@ -376,7 +379,7 @@ function ChallengesSection({ selectedYear }) {
           <h4>Challenges Received</h4>
           <table className="table">
             <thead>
-              <tr><th>Issued By</th><th>Reduction</th><th>Current Budget</th><th>After Challenge</th><th>Reason</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+              <tr><th>Issued By</th><th>Reduction</th><th>Budget</th><th>&Sigma; Budget</th><th>After</th><th>Reason</th><th>Status</th><th>Date</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {receivedChallenges.map(c => {
@@ -384,11 +387,13 @@ function ChallengesSection({ selectedYear }) {
                 const issuerNode = getNode(c.issuedBy);
                 const budget = budgets.find(b => b.orgId === c.targetOrgId && b.year === c.year);
                 const currentHC = budget ? budget.budgetedHC : 0;
+                const accBudget = getAccumulatedBudget(c.targetOrgId, c.year);
                 return (
                   <tr key={c.id}>
                     <td>{issuerHead?.name || '—'} ({issuerNode?.title})</td>
                     <td><span className="text-danger">-{c.amount}</span></td>
                     <td>{currentHC}</td>
+                    <td className="text-accent">{accBudget}</td>
                     <td><strong>{currentHC - c.amount}</strong></td>
                     <td>{c.reason}</td>
                     <td>{statusBadge(c.status)}</td>
@@ -409,18 +414,20 @@ function ChallengesSection({ selectedYear }) {
       <h4 style={{ marginTop: receivedChallenges.length > 0 ? '1rem' : 0 }}>Challenges Issued</h4>
       <table className="table">
         <thead>
-          <tr><th>Target Org</th><th>Reduction</th><th>Current Budget</th><th>Reason</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+          <tr><th>Target Org</th><th>Reduction</th><th>Budget</th><th>&Sigma; Budget</th><th>Reason</th><th>Status</th><th>Date</th><th>Actions</th></tr>
         </thead>
         <tbody>
           {issuedChallenges.map(c => {
             const targetNode = getNode(c.targetOrgId);
             const targetHead = getHead(c.targetOrgId);
             const budget = budgets.find(b => b.orgId === c.targetOrgId && b.year === c.year);
+            const accBudget = getAccumulatedBudget(c.targetOrgId, c.year);
             return (
               <tr key={c.id}>
                 <td>{targetNode?.title}{targetHead ? ` (${targetHead.name})` : ''}</td>
                 <td><span className="text-danger">-{c.amount}</span></td>
                 <td>{budget ? budget.budgetedHC : '—'}</td>
+                <td className="text-accent">{accBudget}</td>
                 <td>{c.reason}</td>
                 <td>{statusBadge(c.status)}</td>
                 <td>{c.createdAt}</td>
@@ -435,7 +442,7 @@ function ChallengesSection({ selectedYear }) {
               </tr>
             );
           })}
-          {issuedChallenges.length === 0 && <tr><td colSpan="7" className="empty">No challenges issued for this period</td></tr>}
+          {issuedChallenges.length === 0 && <tr><td colSpan="8" className="empty">No challenges issued for this period</td></tr>}
         </tbody>
       </table>
     </>
@@ -591,7 +598,7 @@ function TimelineSection({ selectedYear }) {
 
 /* ───── My Budget sub-section ───── */
 function MyBudgetSection({ selectedYear }) {
-  const { currentUserOrgId, budgets, proposals, getDescendantIds, getNode, getHead, getActualCount, dispatch } = useApp();
+  const { currentUserOrgId, budgets, proposals, getDescendantIds, getNode, getHead, getActualCount, getAccumulatedBudget, getAccumulatedActuals, dispatch } = useApp();
   const [form, setForm] = useState(null);
   const [editId, setEditId] = useState(null);
 
@@ -657,7 +664,7 @@ function MyBudgetSection({ selectedYear }) {
       <table className="table">
         <thead>
           <tr>
-            <th>Org Unit</th><th>Year</th><th>Budgeted HC</th><th>Current Actuals</th><th>Open Positions</th><th>Pending Impact</th><th>Notes</th><th>Actions</th>
+            <th>Org Unit</th><th>Year</th><th>Budgeted HC</th><th>Actuals</th><th>Open</th><th>Pending</th><th>&Sigma; Budget</th><th>&Sigma; Actuals</th><th>Notes</th><th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -666,6 +673,8 @@ function MyBudgetSection({ selectedYear }) {
             const actualCount = getActualCount(b.orgId);
             const pendingDelta = proposals.filter(p => p.orgId === b.orgId && p.year === selectedYear && p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
             const open = b.budgetedHC - actualCount;
+            const accBudget = getAccumulatedBudget(b.orgId, selectedYear);
+            const accActuals = getAccumulatedActuals(b.orgId);
             return (
               <tr key={b.id}>
                 <td>{node?.title || b.orgId}</td>
@@ -674,6 +683,8 @@ function MyBudgetSection({ selectedYear }) {
                 <td>{actualCount}</td>
                 <td className={open < 0 ? 'text-danger' : open > 0 ? 'text-success' : ''}>{open > 0 ? '+' : ''}{open}</td>
                 <td>{formatDelta(pendingDelta)}</td>
+                <td className="text-accent">{accBudget}</td>
+                <td className="text-accent">{accActuals}</td>
                 <td>{b.notes}</td>
                 <td className="actions">
                   <button className="btn btn-sm" onClick={() => openEdit(b)}>Edit</button>
@@ -682,7 +693,7 @@ function MyBudgetSection({ selectedYear }) {
               </tr>
             );
           })}
-          {visible.length === 0 && <tr><td colSpan="8" className="empty">No budget entries in your scope</td></tr>}
+          {visible.length === 0 && <tr><td colSpan="10" className="empty">No budget entries in your scope</td></tr>}
         </tbody>
       </table>
     </>

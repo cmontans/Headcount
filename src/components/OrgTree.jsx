@@ -15,9 +15,8 @@ function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds }) {
   const pendingTransfers = transfers.filter(t => (t.toOrgId === node.id || t.fromOrgId === node.id) && t.year === selectedYear && t.status === 'pending_acceptance').length;
   const pendingChallenges = challenges.filter(c => c.targetOrgId === node.id && c.year === selectedYear && c.status === 'pending').length;
 
-  const hasChildren = children.length > 0;
-  const accBudget = hasChildren ? getAccumulatedBudget(node.id, selectedYear) : null;
-  const accActuals = hasChildren ? getAccumulatedActuals(node.id) : null;
+  const accBudget = getAccumulatedBudget(node.id, selectedYear);
+  const accActuals = getAccumulatedActuals(node.id);
 
   return (
     <div className="org-node">
@@ -36,8 +35,10 @@ function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds }) {
         <div className="org-stats">
           {budget && <span title="Own budget">B:{budget.budgetedHC}</span>}
           <span title="Own actuals">A:{actualCount}</span>
-          {hasChildren && accBudget != null && <span title="Accumulated budget (own + descendants)" className="text-accent">&Sigma;B:{accBudget}</span>}
-          {hasChildren && accActuals != null && <span title="Accumulated actuals (own + descendants)" className="text-accent">&Sigma;A:{accActuals}</span>}
+        </div>
+        <div className="org-stats">
+          <span title="Accumulated budget (own + descendants)" className="text-accent">&Sigma;B:{accBudget}</span>
+          <span title="Accumulated actuals (own + descendants)" className="text-accent">&Sigma;A:{accActuals}</span>
           {pendingDelta !== 0 && <span title="Pending budget proposals" className="text-warning">P:{pendingDelta > 0 ? '+' : ''}{pendingDelta}</span>}
           {openReqs > 0 && <span title="Open requisitions" className="text-info">R:{openReqs}</span>}
           {pendingTransfers > 0 && <span title="Pending transfers" className="text-warning">T:{pendingTransfers}</span>}
