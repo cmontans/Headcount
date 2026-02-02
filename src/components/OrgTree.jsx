@@ -11,7 +11,10 @@ function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds, vie
   const canEdit = editableIds.includes(node.id);
   const [collapsed, setCollapsed] = useState(false);
 
-  const openReqs = requisitions.filter(r => r.orgId === node.id && r.status === 'pending_approval').length;
+  // Correctly filter for OPEN requisitions (status === 'open')
+  const openReqs = requisitions.filter(r => r.orgId === node.id && r.status === 'open').length;
+  const pendingReqs = requisitions.filter(r => r.orgId === node.id && r.status === 'pending_approval').length;
+
   // Net pending transfer impact (positive = incoming HC, negative = outgoing HC)
   const pendingTransferDelta = transfers.filter(t => t.year === selectedYear && t.status === 'pending_acceptance')
     .reduce((sum, t) => {
@@ -27,7 +30,9 @@ function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds, vie
   // Accumulated indicators across descendants
   const descIds = getDescendantIds(node.id);
   const accPendingDelta = proposals.filter(p => descIds.includes(p.orgId) && p.year === selectedYear && p.status === 'pending_approval').reduce((s, p) => s + p.delta, 0);
-  const accOpenReqs = requisitions.filter(r => descIds.includes(r.orgId) && r.status === 'pending_approval').length;
+  const accOpenReqs = requisitions.filter(r => descIds.includes(r.orgId) && r.status === 'open').length;
+  const accPendingReqs = requisitions.filter(r => descIds.includes(r.orgId) && r.status === 'pending_approval').length;
+
   const accTransferDelta = transfers.filter(t => t.year === selectedYear && t.status === 'pending_acceptance')
     .reduce((sum, t) => {
       const fromIn = descIds.includes(t.fromOrgId);
@@ -55,30 +60,32 @@ function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds, vie
         )}
         {viewMode === 'individual' && (() => {
           const budgetHC = budget ? budget.budgetedHC : 0;
-          const delta = budgetHC - actualCount;
+          const delta = budgetHC - pendingChallenges - actualCount - openReqs;
           return (
             <div className="org-stats">
               {budget && <span title="Own budget">B:{budgetHC}</span>}
-              <span title="Own actuals">A:{actualCount}</span>
-              <span title="Delta (budget - actuals)" className={delta < 0 ? 'text-danger' : delta > 0 ? 'text-success' : ''}>&Delta;:{delta > 0 ? '+' : ''}{delta}</span>
-              {pendingDelta !== 0 && <span title="Pending budget proposals" className="text-warning">P:{pendingDelta > 0 ? '+' : ''}{pendingDelta}</span>}
-              {openReqs > 0 && <span title="Open requisitions" className="text-info">R:{openReqs}</span>}
-              {pendingTransferDelta !== 0 && <span title="Pending transfers (net HC impact)" className={pendingTransferDelta > 0 ? 'text-info' : 'text-warning'}>T:{pendingTransferDelta > 0 ? '+' : ''}{pendingTransferDelta}</span>}
               {pendingChallenges > 0 && <span title="Pending challenges" className="text-danger">C:-{pendingChallenges}</span>}
+              <span title="Own actuals">A:{actualCount}</span>
+              {openReqs > 0 && <span title="Open requisitions" className="text-info">R:{openReqs}</span>}
+              <span title="Delta (budget - challenges - actuals - open reqs)" className={delta < 0 ? 'text-danger' : delta > 0 ? 'text-success' : ''}>&Delta;:{delta > 0 ? '+' : ''}{delta}</span>
+              {pendingDelta !== 0 && <span title="Pending budget proposals" className="text-warning">P:{pendingDelta > 0 ? '+' : ''}{pendingDelta}</span>}
+              {pendingTransferDelta !== 0 && <span title="Pending transfers (net HC impact)" className={pendingTransferDelta > 0 ? 'text-info' : 'text-warning'}>T:{pendingTransferDelta > 0 ? '+' : ''}{pendingTransferDelta}</span>}
+              {pendingReqs > 0 && <span title="Pending requisitions" className="text-warning">PR:{pendingReqs}</span>}
             </div>
           );
         })()}
         {viewMode === 'accumulated' && (() => {
-          const accDelta = accBudget - accActuals;
+          const accDelta = accBudget - accChallenges - accActuals - accOpenReqs;
           return (
             <div className="org-stats">
               <span title="Accumulated budget (own + descendants)">&Sigma;B:{accBudget}</span>
-              <span title="Accumulated actuals (own + descendants)">&Sigma;A:{accActuals}</span>
-              <span title="Accumulated delta (budget - actuals)" className={accDelta < 0 ? 'text-danger' : accDelta > 0 ? 'text-success' : ''}>&Delta;:{accDelta > 0 ? '+' : ''}{accDelta}</span>
-              {accPendingDelta !== 0 && <span title="Accumulated pending proposals" className="text-warning">P:{accPendingDelta > 0 ? '+' : ''}{accPendingDelta}</span>}
-              {accOpenReqs > 0 && <span title="Accumulated open requisitions" className="text-info">R:{accOpenReqs}</span>}
-              {accTransferDelta !== 0 && <span title="Accumulated pending transfers (net HC impact)" className={accTransferDelta > 0 ? 'text-info' : 'text-warning'}>T:{accTransferDelta > 0 ? '+' : ''}{accTransferDelta}</span>}
               {accChallenges > 0 && <span title="Accumulated pending challenges" className="text-danger">C:-{accChallenges}</span>}
+              <span title="Accumulated actuals (own + descendants)">&Sigma;A:{accActuals}</span>
+              {accOpenReqs > 0 && <span title="Accumulated open requisitions" className="text-info">R:{accOpenReqs}</span>}
+              <span title="Accumulated delta (budget - challenges - actuals - open reqs)" className={accDelta < 0 ? 'text-danger' : accDelta > 0 ? 'text-success' : ''}>&Delta;:{accDelta > 0 ? '+' : ''}{accDelta}</span>
+              {accPendingDelta !== 0 && <span title="Accumulated pending proposals" className="text-warning">P:{accPendingDelta > 0 ? '+' : ''}{accPendingDelta}</span>}
+              {accTransferDelta !== 0 && <span title="Accumulated pending transfers (net HC impact)" className={accTransferDelta > 0 ? 'text-info' : 'text-warning'}>T:{accTransferDelta > 0 ? '+' : ''}{accTransferDelta}</span>}
+              {accPendingReqs > 0 && <span title="Accumulated pending requisitions" className="text-warning">PR:{accPendingReqs}</span>}
             </div>
           );
         })()}
@@ -189,19 +196,21 @@ export default function OrgTree() {
         {viewMode === 'individual' ? (
           <>
             <span><strong>B</strong> Budget</span>
+            <span className="text-danger"><strong>C</strong> Challenges</span>
             <span><strong>A</strong> Actuals</span>
           </>
         ) : (
           <>
             <span><strong>&Sigma;B</strong> Accumulated Budget</span>
+            <span className="text-danger"><strong>C</strong> Challenges</span>
             <span><strong>&Sigma;A</strong> Accumulated Actuals</span>
           </>
         )}
-        <span><strong>&Delta;</strong> Delta (budget − actuals)</span>
+        <span class="text-info"><strong>R</strong> Open Reqs</span>
+        <span><strong>&Delta;</strong> Delta</span>
         <span className="text-warning"><strong>P</strong> Pending Proposals</span>
-        <span className="text-info"><strong>R</strong> Open Requisitions</span>
-        <span className="text-warning"><strong>T</strong> Pending Transfers (net HC)</span>
-        <span className="text-danger"><strong>C</strong> Pending Challenges (reduction)</span>
+        <span className="text-warning"><strong>T</strong> Pending Transfers</span>
+        <span className="text-warning"><strong>PR</strong> Pending Reqs</span>
       </div>
 
       <div className="org-tree">
