@@ -182,7 +182,7 @@
 .text-success { color: var(--success); font-weight: 600; }
 .text-warning { color: #d97706; font-weight: 600; }
 .text-info { color: #2563eb; font-weight: 600; }
-.text-accent { color: var(--primary); font-weight: 700; }
+.text-accent { color: var(--text); font-weight: 700; }
 
 /* ---- KPI Grid ---- */
 .kpi-grid {

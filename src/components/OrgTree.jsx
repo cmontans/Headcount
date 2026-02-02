@@ -32,26 +32,35 @@ function OrgNode({ node, onEdit, onAdd, onDelete, selectedYear, editableIds, vie
         ) : (
           <span className="org-head-vacant">Vacant</span>
         )}
-        {viewMode === 'individual' && (
-          <div className="org-stats">
-            {budget && <span title="Own budget">B:{budget.budgetedHC}</span>}
-            <span title="Own actuals">A:{actualCount}</span>
-            {pendingDelta !== 0 && <span title="Pending budget proposals" className="text-warning">P:{pendingDelta > 0 ? '+' : ''}{pendingDelta}</span>}
-            {openReqs > 0 && <span title="Open requisitions" className="text-info">R:{openReqs}</span>}
-            {pendingTransfers > 0 && <span title="Pending transfers" className="text-warning">T:{pendingTransfers}</span>}
-            {pendingChallenges > 0 && <span title="Pending challenges" className="text-danger">C:{pendingChallenges}</span>}
-          </div>
-        )}
-        {viewMode === 'accumulated' && (
-          <div className="org-stats">
-            <span title="Accumulated budget (own + descendants)" className="text-accent">&Sigma;B:{accBudget}</span>
-            <span title="Accumulated actuals (own + descendants)" className="text-accent">&Sigma;A:{accActuals}</span>
-            {pendingDelta !== 0 && <span title="Pending budget proposals" className="text-warning">P:{pendingDelta > 0 ? '+' : ''}{pendingDelta}</span>}
-            {openReqs > 0 && <span title="Open requisitions" className="text-info">R:{openReqs}</span>}
-            {pendingTransfers > 0 && <span title="Pending transfers" className="text-warning">T:{pendingTransfers}</span>}
-            {pendingChallenges > 0 && <span title="Pending challenges" className="text-danger">C:{pendingChallenges}</span>}
-          </div>
-        )}
+        {viewMode === 'individual' && (() => {
+          const budgetHC = budget ? budget.budgetedHC : 0;
+          const delta = budgetHC - actualCount;
+          return (
+            <div className="org-stats">
+              {budget && <span title="Own budget">B:{budgetHC}</span>}
+              <span title="Own actuals">A:{actualCount}</span>
+              <span title="Delta (budget - actuals)" className={delta < 0 ? 'text-danger' : delta > 0 ? 'text-success' : ''}>&Delta;:{delta > 0 ? '+' : ''}{delta}</span>
+              {pendingDelta !== 0 && <span title="Pending budget proposals" className="text-warning">P:{pendingDelta > 0 ? '+' : ''}{pendingDelta}</span>}
+              {openReqs > 0 && <span title="Open requisitions" className="text-info">R:{openReqs}</span>}
+              {pendingTransfers > 0 && <span title="Pending transfers" className="text-warning">T:{pendingTransfers}</span>}
+              {pendingChallenges > 0 && <span title="Pending challenges" className="text-danger">C:{pendingChallenges}</span>}
+            </div>
+          );
+        })()}
+        {viewMode === 'accumulated' && (() => {
+          const accDelta = accBudget - accActuals;
+          return (
+            <div className="org-stats">
+              <span title="Accumulated budget (own + descendants)">&Sigma;B:{accBudget}</span>
+              <span title="Accumulated actuals (own + descendants)">&Sigma;A:{accActuals}</span>
+              <span title="Accumulated delta (budget - actuals)" className={accDelta < 0 ? 'text-danger' : accDelta > 0 ? 'text-success' : ''}>&Delta;:{accDelta > 0 ? '+' : ''}{accDelta}</span>
+              {pendingDelta !== 0 && <span title="Pending budget proposals" className="text-warning">P:{pendingDelta > 0 ? '+' : ''}{pendingDelta}</span>}
+              {openReqs > 0 && <span title="Open requisitions" className="text-info">R:{openReqs}</span>}
+              {pendingTransfers > 0 && <span title="Pending transfers" className="text-warning">T:{pendingTransfers}</span>}
+              {pendingChallenges > 0 && <span title="Pending challenges" className="text-danger">C:{pendingChallenges}</span>}
+            </div>
+          );
+        })()}
         {collapsed && children.length > 0 && <div className="org-stats"><span title="Hidden children" className="org-collapsed-hint">[{children.length}]</span></div>}
         {canEdit && (
           <div className="org-card-actions">
