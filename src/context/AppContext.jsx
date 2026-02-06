@@ -180,6 +180,88 @@ function reducer(state, action) {
     case 'IMPORT_REQUISITIONS':
       return { ...state, requisitions: action.payload };
 
+    // --- XLSX Upsert Import (orgs + employees) ---
+    case 'IMPORT_XLSX_ORGS_EMPLOYEES': {
+      const { orgs, employees } = action.payload;
+      let updatedOrgNodes = [...state.orgNodes];
+      let updatedActuals = [...state.actuals];
+      const orgIdMap = {}; // orgTitle -> internal id
+
+      // Upsert orgs: match by title (case-insensitive)
+      for (const org of orgs) {
+        const existing = updatedOrgNodes.find(
+          (n) => n.title.toLowerCase().trim() === org.title.toLowerCase().trim()
+        );
+        if (existing) {
+          orgIdMap[org.title] = existing.id;
+        } else {
+          const newId = uuid();
+          orgIdMap[org.title] = newId;
+          updatedOrgNodes.push({ id: newId, title: org.title, parentId: null });
+        }
+      }
+
+      // Upsert employees: match by externalId first, then by name+org
+      for (const emp of employees) {
+        const orgId = orgIdMap[emp.orgTitle];
+        if (!orgId) continue;
+
+        const existingByExtId = emp.externalId
+          ? updatedActuals.find((a) => a.externalId === emp.externalId)
+          : null;
+        const existingByName = !existingByExtId
+          ? updatedActuals.find(
+              (a) =>
+                a.name.toLowerCase().trim() === emp.name.toLowerCase().trim() &&
+                a.orgId === orgId
+            )
+          : null;
+        const existing = existingByExtId || existingByName;
+
+        if (existing) {
+          // If marking as head, clear previous head in that org
+          if (emp.isHead && !existing.isHead) {
+            updatedActuals = updatedActuals.map((a) =>
+              a.orgId === orgId && a.isHead && a.id !== existing.id
+                ? { ...a, isHead: false }
+                : a
+            );
+          }
+          updatedActuals = updatedActuals.map((a) =>
+            a.id === existing.id
+              ? {
+                  ...a,
+                  name: emp.name,
+                  role: emp.role,
+                  orgId,
+                  externalId: emp.externalId,
+                  ...(emp.isHead ? { isHead: true } : {}),
+                }
+              : a
+          );
+        } else {
+          // New employee — clear existing head if this one is head
+          if (emp.isHead) {
+            updatedActuals = updatedActuals.map((a) =>
+              a.orgId === orgId && a.isHead ? { ...a, isHead: false } : a
+            );
+          }
+          updatedActuals.push({
+            id: uuid(),
+            orgId,
+            name: emp.name,
+            role: emp.role,
+            startDate: new Date().toISOString().slice(0, 10),
+            status: 'active',
+            isHead: emp.isHead,
+            externalId: emp.externalId,
+          });
+        }
+      }
+
+      return { ...state, orgNodes: updatedOrgNodes, actuals: updatedActuals };
+    }
+
     // --- Org ---
     case 'ADD_ORG_NODE':
       return { ...state, orgNodes: [...state.orgNodes, { ...action.payload, id: uuid() }] };
@@ -237,6 +319,7 @@ const AUDITED_ACTIONS = {
   IMPORT_ACTUALS: 'Imported actuals from CSV',
   IMPORT_PROPOSALS: 'Imported proposals from CSV',
   IMPORT_REQUISITIONS: 'Imported requisitions from CSV',
+  IMPORT_XLSX_ORGS_EMPLOYEES: 'Imported organizations and employees from XLSX',
   ADD_ORG_NODE: 'Added organization unit',
   UPDATE_ORG_NODE: 'Updated organization unit',
   DELETE_ORG_NODE: 'Deleted organization unit',
@@ -341,6 +424,8 @@ function buildDetail(state, action) {
       return `${action.payload.length} proposals`;
     case 'IMPORT_REQUISITIONS':
       return `${action.payload.length} requisitions`;
+    case 'IMPORT_XLSX_ORGS_EMPLOYEES':
+      return `${action.payload.orgs.length} organizations, ${action.payload.employees.length} employees`;
     default:
       return '';
   }

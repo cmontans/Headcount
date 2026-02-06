@@ -5,6 +5,7 @@ import {
   downloadCSV, parseCSV,
   exportOrgNodes, exportBudgets, exportActuals, exportProposals, exportRequisitions,
 } from '../utils/csv';
+import { readXlsxFile, parseOrgEmployeeData } from '../utils/xlsx';
 
 const TABS = ['Audit Log', 'Data Sync', 'Guide'];
 
@@ -16,6 +17,7 @@ const ACTION_CATEGORIES = {
   'Transfers': ['ADD_TRANSFER', 'UPDATE_TRANSFER', 'DELETE_TRANSFER', 'CANCEL_TRANSFER', 'ACCEPT_TRANSFER', 'REJECT_TRANSFER'],
   'Challenges': ['ADD_CHALLENGE', 'UPDATE_CHALLENGE', 'DELETE_CHALLENGE', 'ACKNOWLEDGE_CHALLENGE'],
   'Organization': ['ADD_ORG_NODE', 'UPDATE_ORG_NODE', 'DELETE_ORG_NODE'],
+  'Import': ['IMPORT_ORG_NODES', 'IMPORT_BUDGETS', 'IMPORT_ACTUALS', 'IMPORT_PROPOSALS', 'IMPORT_REQUISITIONS', 'IMPORT_XLSX_ORGS_EMPLOYEES'],
 };
 
 /* ───────── Audit Log Section ───────── */
@@ -78,6 +80,9 @@ function AuditLogSection() {
 /* ───────── Data Sync Section ───────── */
 function DataSyncSection() {
   const { orgNodes, budgets, actuals, proposals, requisitions, dispatch } = useApp();
+  const [xlsxPreview, setXlsxPreview] = useState(null);
+  const [xlsxErrors, setXlsxErrors] = useState([]);
+  const [xlsxFileName, setXlsxFileName] = useState('');
 
   function handleExport(entity) {
     const map = {
@@ -139,6 +144,83 @@ function DataSyncSection() {
     }
   }
 
+  // --- XLSX Import handlers ---
+  function handleXlsxSelect() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx,.xls';
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      setXlsxFileName(file.name);
+      setXlsxErrors([]);
+      setXlsxPreview(null);
+      try {
+        const { rows } = await readXlsxFile(file);
+        const parsed = parseOrgEmployeeData(rows);
+        if (parsed.errors.length && !parsed.orgs.length && !parsed.employees.length) {
+          setXlsxErrors(parsed.errors);
+          return;
+        }
+        // Enrich preview with existing/new status
+        const enrichedOrgs = parsed.orgs.map((org) => {
+          const existing = orgNodes.find(
+            (n) => n.title.toLowerCase().trim() === org.title.toLowerCase().trim()
+          );
+          return { ...org, status: existing ? 'update' : 'new' };
+        });
+        const enrichedEmps = parsed.employees.map((emp) => {
+          const orgNode = orgNodes.find(
+            (n) => n.title.toLowerCase().trim() === emp.orgTitle.toLowerCase().trim()
+          );
+          const orgId = orgNode?.id;
+          const existingByExtId = emp.externalId
+            ? actuals.find((a) => a.externalId === emp.externalId)
+            : null;
+          const existingByName =
+            !existingByExtId && orgId
+              ? actuals.find(
+                  (a) =>
+                    a.name.toLowerCase().trim() === emp.name.toLowerCase().trim() &&
+                    a.orgId === orgId
+                )
+              : null;
+          return { ...emp, status: existingByExtId || existingByName ? 'update' : 'new' };
+        });
+        setXlsxPreview({ orgs: enrichedOrgs, employees: enrichedEmps });
+        if (parsed.errors.length) setXlsxErrors(parsed.errors);
+      } catch (err) {
+        setXlsxErrors([`Failed to read file: ${err.message}`]);
+      }
+    };
+    input.click();
+  }
+
+  function handleXlsxImport() {
+    if (!xlsxPreview) return;
+    const payload = {
+      orgs: xlsxPreview.orgs.map(({ status: _s, ...rest }) => rest),
+      employees: xlsxPreview.employees.map(({ status: _s, ...rest }) => rest),
+    };
+    dispatch({ type: 'IMPORT_XLSX_ORGS_EMPLOYEES', payload });
+    const newOrgs = xlsxPreview.orgs.filter((o) => o.status === 'new').length;
+    const updOrgs = xlsxPreview.orgs.filter((o) => o.status === 'update').length;
+    const newEmps = xlsxPreview.employees.filter((e) => e.status === 'new').length;
+    const updEmps = xlsxPreview.employees.filter((e) => e.status === 'update').length;
+    alert(
+      `Import complete!\nOrganizations: ${newOrgs} created, ${updOrgs} updated\nEmployees: ${newEmps} created, ${updEmps} updated`
+    );
+    setXlsxPreview(null);
+    setXlsxErrors([]);
+    setXlsxFileName('');
+  }
+
+  function handleXlsxCancel() {
+    setXlsxPreview(null);
+    setXlsxErrors([]);
+    setXlsxFileName('');
+  }
+
   const entities = [
     { key: 'org', importKey: 'org_nodes', label: 'Organization Structure', count: orgNodes.length },
     { key: 'budgets', importKey: 'budgets', label: 'Budgets', count: budgets.length },
@@ -149,6 +231,106 @@ function DataSyncSection() {
 
   return (
     <>
+      <h3>Import from XLSX (Workday)</h3>
+      <p className="field-hint">
+        Import organizations and employees from a Workday XLSX export. Existing records are updated (matched by employee ID or name); new records are created.
+      </p>
+      <div style={{ marginBottom: '1rem' }}>
+        <button className="btn btn-primary" onClick={handleXlsxSelect}>
+          Select XLSX File
+        </button>
+        {xlsxFileName && (
+          <span style={{ marginLeft: '0.75rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            {xlsxFileName}
+          </span>
+        )}
+      </div>
+
+      {xlsxErrors.length > 0 && (
+        <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 'var(--radius)', padding: '0.75rem', marginBottom: '1rem' }}>
+          <strong className="text-danger">Parse warnings/errors:</strong>
+          <ul style={{ margin: '0.5rem 0 0 1rem', fontSize: '0.85rem' }}>
+            {xlsxErrors.slice(0, 20).map((err, i) => (
+              <li key={i}>{err}</li>
+            ))}
+            {xlsxErrors.length > 20 && <li>...and {xlsxErrors.length - 20} more</li>}
+          </ul>
+        </div>
+      )}
+
+      {xlsxPreview && (
+        <div style={{ marginBottom: '2rem' }}>
+          <h4>Preview</h4>
+
+          <h5>Organizations ({xlsxPreview.orgs.length})</h5>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Organization</th>
+                <th>Head</th>
+                <th>External ID</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {xlsxPreview.orgs.map((org, i) => (
+                <tr key={i}>
+                  <td>{org.title}</td>
+                  <td>{org.headName}</td>
+                  <td>{org.headExternalId}</td>
+                  <td>
+                    <span className={org.status === 'new' ? 'badge badge-approved' : 'badge badge-pending_approval'}>
+                      {org.status === 'new' ? 'New' : 'Update'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <h5 style={{ marginTop: '1rem' }}>Employees ({xlsxPreview.employees.length})</h5>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Organization</th>
+                <th>External ID</th>
+                <th>Head</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {xlsxPreview.employees.map((emp, i) => (
+                <tr key={i}>
+                  <td>{emp.name}</td>
+                  <td>{emp.role}</td>
+                  <td>{emp.orgTitle}</td>
+                  <td>{emp.externalId}</td>
+                  <td>{emp.isHead ? 'Yes' : ''}</td>
+                  <td>
+                    <span className={emp.status === 'new' ? 'badge badge-approved' : 'badge badge-pending_approval'}>
+                      {emp.status === 'new' ? 'New' : 'Update'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+            <button className="btn btn-success" onClick={handleXlsxImport}>
+              Confirm Import
+            </button>
+            <button className="btn" onClick={handleXlsxCancel}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      <hr style={{ margin: '2rem 0' }} />
+
       <h3>Export</h3>
       <div style={{ marginBottom: '1rem' }}>
         <button className="btn btn-primary" onClick={handleExportAll}>Export All (5 files)</button>
