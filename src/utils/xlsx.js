@@ -1,15 +1,15 @@
-import * as XLSX from 'xlsx';
-
 /**
  * Read an XLSX file and return the first sheet's data as an array of row arrays.
+ * The xlsx library is dynamically imported to keep it out of the main bundle.
  * @param {File} file
  * @returns {Promise<{sheetName: string, rows: Array<Array<string>>}>}
  */
 export function readXlsxFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
+        const XLSX = await import('xlsx');
         const workbook = XLSX.read(e.target.result, { type: 'array' });
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
