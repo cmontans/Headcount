@@ -33,8 +33,8 @@ export function readXlsxFile(file) {
 export function parseOrgColumn(value) {
   if (!value || typeof value !== 'string') return null;
   const s = value.trim();
-  // Match: "Org Title (Head Name (12345))"
-  const match = s.match(/^(.+?)\s*\((.+?)\s*\((\d+)\)\)\s*$/);
+  // Match: "Org Title (Head Name (12345))" and allow trailing text
+  const match = s.match(/^(.+?)\s*\((.+?)\s*\((\d+)\)\).*$/);
   if (!match) return null;
   return {
     orgTitle: match[1].trim(),
@@ -53,8 +53,8 @@ export function parseOrgColumn(value) {
 export function parsePositionColumn(value) {
   if (!value || typeof value !== 'string') return null;
   const s = value.trim();
-  // Match: "Role - Employee Name (12345)" (supports -, –, —)
-  const match = s.match(/^(.+?)\s*[-–—]\s*(.+?)\s*\((\d+)\)\s*$/);
+  // Match: "Role - Employee Name (12345)" (supports -, –, —) and ignores trailing text
+  const match = s.match(/^(.+?)\s*[-–—]\s*(.+?)\s*\((\d+)\).*$/);
   if (!match) return null;
   return {
     role: match[1].trim(),
@@ -189,24 +189,41 @@ export function parseOrgEmployeeData(rows) {
 export function inferOrgHierarchy(allOrgs, targetOrgs) {
   const parentMap = new Map();
 
+  // Helper to extract code (first word)
+  // Splits by whitespace to get the first token
+  const getCode = (t) => t.trim().split(/\s+/)[0].toLowerCase();
+
   // Collect all unique titles (lowercased for comparison, original for output)
   const allTitles = allOrgs.map((o) => ({
     original: o.title,
     lower: o.title.toLowerCase().trim(),
+    code: getCode(o.title),
   }));
 
   for (const org of targetOrgs) {
     const titleLower = org.title.toLowerCase().trim();
+    const orgCode = getCode(org.title);
+
     let bestMatch = null;
-    let bestMatchLen = 0;
+    let bestMatchLen = 0; // Length of the matching segment (either full title or code)
 
     for (const candidate of allTitles) {
-      // Must be a strict prefix (shorter than the full title)
-      if (candidate.lower.length >= titleLower.length) continue;
-      if (titleLower.startsWith(candidate.lower)) {
+      // 1. Full Title Prefix Match (Strict)
+      // Example: "Engineering" -> "Engineering Team"
+      if (candidate.lower.length < titleLower.length && titleLower.startsWith(candidate.lower)) {
         if (candidate.lower.length > bestMatchLen) {
           bestMatch = candidate.original;
           bestMatchLen = candidate.lower.length;
+        }
+      }
+
+      // 2. Code Prefix Match (Strict)
+      // Example: "TASTO" (tasto) -> "TASTO1..." (tasto1)
+      // Check if candidate's code is a prefix of org's code
+      if (candidate.code.length < orgCode.length && orgCode.startsWith(candidate.code)) {
+        if (candidate.code.length > bestMatchLen) {
+          bestMatch = candidate.original;
+          bestMatchLen = candidate.code.length;
         }
       }
     }

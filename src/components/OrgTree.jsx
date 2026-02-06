@@ -120,6 +120,7 @@ export default function OrgTree() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [viewMode, setViewMode] = useState('individual'); // 'individual' | 'accumulated'
+  const [zoom, setZoom] = useState(1);
 
   const years = [...new Set(budgets.map(b => b.year))].sort();
   if (!years.includes(currentYear)) years.push(currentYear);
@@ -128,6 +129,14 @@ export default function OrgTree() {
   function openAdd(parentId) {
     setForm({ ...emptyForm, parentId });
     setEditId(null);
+  }
+
+  function handleZoom(delta) {
+    setZoom(z => Math.max(0.2, Math.min(2, z + delta)));
+  }
+
+  function handleZoomReset() {
+    setZoom(1);
   }
 
   function openEdit(node) {
@@ -187,6 +196,12 @@ export default function OrgTree() {
             <button className={`btn btn-sm ${viewMode === 'individual' ? 'btn-primary' : ''}`} onClick={() => setViewMode('individual')}>Individual</button>
             <button className={`btn btn-sm ${viewMode === 'accumulated' ? 'btn-primary' : ''}`} onClick={() => setViewMode('accumulated')}>Accumulated</button>
           </div>
+          <div className="zoom-controls">
+            <button className="btn btn-sm" onClick={() => handleZoom(-0.1)} title="Zoom Out">-</button>
+            <span style={{ margin: '0 0.5rem', minWidth: '3rem', textAlign: 'center' }}>{Math.round(zoom * 100)}%</span>
+            <button className="btn btn-sm" onClick={() => handleZoom(0.1)} title="Zoom In">+</button>
+            <button className="btn btn-sm" onClick={handleZoomReset} title="Reset Zoom">R</button>
+          </div>
           <button className="btn btn-primary" onClick={() => openAdd(null)}>+ Add Organization</button>
           <button className="btn" onClick={() => { if (roots.length > 0) openAdd(roots[0].id); }}>+ Add Position</button>
         </div>
@@ -206,18 +221,20 @@ export default function OrgTree() {
             <span><strong>&Sigma;A</strong> Accumulated Actuals</span>
           </>
         )}
-        <span class="text-info"><strong>R</strong> Open Reqs</span>
+        <span className="text-info"><strong>R</strong> Open Reqs</span>
         <span><strong>&Delta;</strong> Delta</span>
         <span className="text-warning"><strong>P</strong> Pending Proposals</span>
         <span className="text-warning"><strong>T</strong> Pending Transfers</span>
         <span className="text-warning"><strong>PR</strong> Pending Reqs</span>
       </div>
 
-      <div className="org-tree">
-        {roots.map(root => (
-          <OrgNode key={root.id} node={root} onEdit={openEdit} onAdd={openAdd} onDelete={handleDelete} selectedYear={selectedYear} editableIds={editableIds} viewMode={viewMode} />
-        ))}
-        {roots.length === 0 && <p className="empty">No organizations defined yet.</p>}
+      <div className="org-tree-wrapper" style={{ overflow: 'auto', border: '1px solid #ccc', borderRadius: '4px', padding: '1rem', height: 'calc(100vh - 200px)' }}>
+        <div className="org-tree" style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: 'fit-content' }}>
+          {roots.map(root => (
+            <OrgNode key={root.id} node={root} onEdit={openEdit} onAdd={openAdd} onDelete={handleDelete} selectedYear={selectedYear} editableIds={editableIds} viewMode={viewMode} />
+          ))}
+          {roots.length === 0 && <p className="empty">No organizations defined yet.</p>}
+        </div>
       </div>
 
       {form && (

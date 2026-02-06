@@ -190,10 +190,10 @@ function DataSyncSection() {
           const existingByName =
             !existingByExtId && orgId
               ? actuals.find(
-                  (a) =>
-                    a.name.toLowerCase().trim() === emp.name.toLowerCase().trim() &&
-                    a.orgId === orgId
-                )
+                (a) =>
+                  a.name.toLowerCase().trim() === emp.name.toLowerCase().trim() &&
+                  a.orgId === orgId
+              )
               : null;
           return { ...emp, status: existingByExtId || existingByName ? 'update' : 'new' };
         });
@@ -508,11 +508,28 @@ export default function Admin() {
     }
   }
 
+  function handleClearAll() {
+    if (window.confirm('WARNING: This will explicitly DELETE ALL organizations, employees, and associated data.\n\nThe application will be empty.\n\nAre you sure?')) {
+      dispatch({ type: 'CLEAR_ALL_DATA' });
+    }
+  }
+
+  function handleAutoBudget() {
+    if (window.confirm('This will set the budget for ALL organizations equal to their current actual headcount for the current year.\n\nExisting budgets for this year will be updated.\n\nContinue?')) {
+      dispatch({ type: 'AUTO_FILL_BUDGETS' });
+      alert('Budgets updated.');
+    }
+  }
+
   return (
     <div className="page">
       <div className="page-header">
         <h2>Administration</h2>
-        <button className="btn btn-danger" onClick={handleReset}>Reset to Defaults</button>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button className="btn btn-secondary" onClick={handleAutoBudget}>Auto-Set Budgets</button>
+          <button className="btn btn-danger" onClick={handleClearAll}>Delete All Data</button>
+          <button className="btn btn-warning" onClick={handleReset}>Reset to Defaults</button>
+        </div>
       </div>
       <div className="tabs">
         {TABS.map(tab => (

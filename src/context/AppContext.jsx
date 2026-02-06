@@ -81,11 +81,13 @@ function reducer(state, action) {
       const escalatorNode = state.orgNodes.find(n => n.id === escalatorOrg);
       const parentOrgId = escalatorNode?.parentId || null;
       if (!parentOrgId) return state; // already at top, cannot escalate
-      return { ...state, proposals: state.proposals.map(p =>
-        p.id === action.payload.id
-          ? { ...p, requestedBy: escalatorOrg, escalatedFrom: p.requestedBy, escalatedBy: action.payload.escalatedByOrg }
-          : p
-      ) };
+      return {
+        ...state, proposals: state.proposals.map(p =>
+          p.id === action.payload.id
+            ? { ...p, requestedBy: escalatorOrg, escalatedFrom: p.requestedBy, escalatedBy: action.payload.escalatedByOrg }
+            : p
+        )
+      };
     }
     case 'REJECT_PROPOSAL':
       return { ...state, proposals: state.proposals.map(p => p.id === action.payload.id ? { ...p, status: 'rejected', approvedBy: action.payload.rejectedBy } : p) };
@@ -227,10 +229,10 @@ function reducer(state, action) {
           : null;
         const existingByName = !existingByExtId
           ? updatedActuals.find(
-              (a) =>
-                a.name.toLowerCase().trim() === emp.name.toLowerCase().trim() &&
-                a.orgId === orgId
-            )
+            (a) =>
+              a.name.toLowerCase().trim() === emp.name.toLowerCase().trim() &&
+              a.orgId === orgId
+          )
           : null;
         const existing = existingByExtId || existingByName;
 
@@ -246,13 +248,13 @@ function reducer(state, action) {
           updatedActuals = updatedActuals.map((a) =>
             a.id === existing.id
               ? {
-                  ...a,
-                  name: emp.name,
-                  role: emp.role,
-                  orgId,
-                  externalId: emp.externalId,
-                  ...(emp.isHead ? { isHead: true } : {}),
-                }
+                ...a,
+                name: emp.name,
+                role: emp.role,
+                orgId,
+                externalId: emp.externalId,
+                ...(emp.isHead ? { isHead: true } : {}),
+              }
               : a
           );
         } else {
@@ -278,7 +280,40 @@ function reducer(state, action) {
       return { ...state, orgNodes: updatedOrgNodes, actuals: updatedActuals };
     }
 
-    // --- Org ---
+    case 'AUTO_FILL_BUDGETS': {
+      const year = new Date().getFullYear();
+      let newBudgets = [...state.budgets];
+
+      for (const org of state.orgNodes) {
+        // Count active actuals for this org
+        const count = state.actuals.filter(
+          (a) => a.orgId === org.id && a.status === 'active'
+        ).length;
+
+        // Find existing budget
+        const existingIdx = newBudgets.findIndex(
+          (b) => b.orgId === org.id && b.year === year
+        );
+
+        if (existingIdx >= 0) {
+          // Update existing
+          newBudgets[existingIdx] = {
+            ...newBudgets[existingIdx],
+            budgetedHC: count,
+          };
+        } else {
+          // Create new
+          newBudgets.push({
+            id: uuid(),
+            orgId: org.id,
+            year: year,
+            budgetedHC: count,
+            notes: 'Auto-generated from Actuals',
+          });
+        }
+      }
+      return { ...state, budgets: newBudgets };
+    }
     case 'ADD_ORG_NODE':
       return { ...state, orgNodes: [...state.orgNodes, { ...action.payload, id: uuid() }] };
     case 'UPDATE_ORG_NODE':
@@ -291,6 +326,26 @@ function reducer(state, action) {
         .filter(n => n.id !== action.payload);
       return { ...state, orgNodes: updated };
     }
+
+    case 'RESET_TO_SEED':
+      // This is handled in auditReducer wrapper, but we include it here for completeness or direct calls
+      return seedState;
+
+    case 'CLEAR_ALL_DATA':
+      return {
+        ...state,
+        currentUserId: null,
+        orgNodes: [],
+        budgets: [],
+        proposals: [],
+        actuals: [],
+        requisitions: [],
+        transfers: [],
+        challenges: [],
+        // auditLog is handled by wrapper or preserved depending on implementation, 
+        // but generally we might want to keep the log of the deletion event.
+        // The auditReducer wrapper creates the log entry *after* this reducer runs.
+      };
 
     default:
       return state;
@@ -338,7 +393,11 @@ const AUDITED_ACTIONS = {
   IMPORT_XLSX_ORGS_EMPLOYEES: 'Imported organizations and employees from XLSX',
   ADD_ORG_NODE: 'Added organization unit',
   UPDATE_ORG_NODE: 'Updated organization unit',
+  UPDATE_ORG_NODE: 'Updated organization unit',
   DELETE_ORG_NODE: 'Deleted organization unit',
+  RESET_TO_SEED: 'Reset application to default seed data',
+  CLEAR_ALL_DATA: 'Deleted ALL organizations and employees',
+  AUTO_FILL_BUDGETS: 'Auto-set budgets to match actuals',
 };
 
 function buildDetail(state, action) {
