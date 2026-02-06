@@ -1,6 +1,7 @@
 import { createContext, useContext, useReducer, useCallback } from 'react';
 import { v4 as uuid } from 'uuid';
 import { orgNodes as seedOrg, budgets as seedBudgets, proposals as seedProposals, actuals as seedActuals, requisitions as seedRequisitions, transfers as seedTransfers, challenges as seedChallenges } from '../data/seed';
+import { inferOrgHierarchy } from '../utils/xlsx';
 
 const AppContext = createContext();
 
@@ -198,6 +199,21 @@ function reducer(state, action) {
           const newId = uuid();
           orgIdMap[org.title] = newId;
           updatedOrgNodes.push({ id: newId, title: org.title, parentId: null });
+        }
+      }
+
+      // Infer parent-child hierarchy from org name prefixes
+      // e.g. "TASTO5" becomes child of "TASTO"
+      const hierarchyMap = inferOrgHierarchy(updatedOrgNodes, orgs);
+      for (const [childTitle, parentTitle] of hierarchyMap) {
+        const childId = orgIdMap[childTitle];
+        const parentNode = updatedOrgNodes.find(
+          (n) => n.title.toLowerCase().trim() === parentTitle.toLowerCase().trim()
+        );
+        if (childId && parentNode) {
+          updatedOrgNodes = updatedOrgNodes.map((n) =>
+            n.id === childId && !n.parentId ? { ...n, parentId: parentNode.id } : n
+          );
         }
       }
 

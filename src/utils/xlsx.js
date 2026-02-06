@@ -174,3 +174,47 @@ export function parseOrgEmployeeData(rows) {
 
   return { orgs, employees, errors };
 }
+
+/**
+ * Infer parent-child relationships between orgs based on name prefix matching.
+ * If org B's title starts with org A's title, then B is a child of A.
+ * When multiple prefix matches exist, the longest (most specific) match wins.
+ *
+ * Example: "TASTO5" is child of "TASTO", "TASTO5A" is child of "TASTO5".
+ *
+ * @param {Array<{title: string}>} allOrgs - All known orgs (existing + imported)
+ * @param {Array<{title: string}>} targetOrgs - Orgs to assign parents to
+ * @returns {Map<string, string>} Map of childOrgTitle -> parentOrgTitle
+ */
+export function inferOrgHierarchy(allOrgs, targetOrgs) {
+  const parentMap = new Map();
+
+  // Collect all unique titles (lowercased for comparison, original for output)
+  const allTitles = allOrgs.map((o) => ({
+    original: o.title,
+    lower: o.title.toLowerCase().trim(),
+  }));
+
+  for (const org of targetOrgs) {
+    const titleLower = org.title.toLowerCase().trim();
+    let bestMatch = null;
+    let bestMatchLen = 0;
+
+    for (const candidate of allTitles) {
+      // Must be a strict prefix (shorter than the full title)
+      if (candidate.lower.length >= titleLower.length) continue;
+      if (titleLower.startsWith(candidate.lower)) {
+        if (candidate.lower.length > bestMatchLen) {
+          bestMatch = candidate.original;
+          bestMatchLen = candidate.lower.length;
+        }
+      }
+    }
+
+    if (bestMatch) {
+      parentMap.set(org.title, bestMatch);
+    }
+  }
+
+  return parentMap;
+}

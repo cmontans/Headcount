@@ -5,7 +5,7 @@ import {
   downloadCSV, parseCSV,
   exportOrgNodes, exportBudgets, exportActuals, exportProposals, exportRequisitions,
 } from '../utils/csv';
-import { readXlsxFile, parseOrgEmployeeData } from '../utils/xlsx';
+import { readXlsxFile, parseOrgEmployeeData, inferOrgHierarchy } from '../utils/xlsx';
 
 const TABS = ['Audit Log', 'Data Sync', 'Guide'];
 
@@ -162,12 +162,22 @@ function DataSyncSection() {
           setXlsxErrors(parsed.errors);
           return;
         }
-        // Enrich preview with existing/new status
+        // Infer hierarchy from name prefixes (across imported + existing orgs)
+        const allOrgsForHierarchy = [
+          ...orgNodes.map((n) => ({ title: n.title })),
+          ...parsed.orgs.filter(
+            (o) => !orgNodes.some((n) => n.title.toLowerCase().trim() === o.title.toLowerCase().trim())
+          ),
+        ];
+        const hierarchyMap = inferOrgHierarchy(allOrgsForHierarchy, parsed.orgs);
+
+        // Enrich preview with existing/new status and inferred parent
         const enrichedOrgs = parsed.orgs.map((org) => {
           const existing = orgNodes.find(
             (n) => n.title.toLowerCase().trim() === org.title.toLowerCase().trim()
           );
-          return { ...org, status: existing ? 'update' : 'new' };
+          const inferredParent = hierarchyMap.get(org.title) || null;
+          return { ...org, status: existing ? 'update' : 'new', inferredParent };
         });
         const enrichedEmps = parsed.employees.map((emp) => {
           const orgNode = orgNodes.find(
@@ -198,9 +208,11 @@ function DataSyncSection() {
 
   function handleXlsxImport() {
     if (!xlsxPreview) return;
+    const stripPreview = ({ status, inferredParent, ...rest }) => rest;
+    const stripStatus = ({ status, ...rest }) => rest;
     const payload = {
-      orgs: xlsxPreview.orgs.map(({ status: _s, ...rest }) => rest),
-      employees: xlsxPreview.employees.map(({ status: _s, ...rest }) => rest),
+      orgs: xlsxPreview.orgs.map(stripPreview),
+      employees: xlsxPreview.employees.map(stripStatus),
     };
     dispatch({ type: 'IMPORT_XLSX_ORGS_EMPLOYEES', payload });
     const newOrgs = xlsxPreview.orgs.filter((o) => o.status === 'new').length;
@@ -267,6 +279,7 @@ function DataSyncSection() {
             <thead>
               <tr>
                 <th>Organization</th>
+                <th>Parent (inferred)</th>
                 <th>Head</th>
                 <th>External ID</th>
                 <th>Status</th>
@@ -276,6 +289,9 @@ function DataSyncSection() {
               {xlsxPreview.orgs.map((org, i) => (
                 <tr key={i}>
                   <td>{org.title}</td>
+                  <td style={{ color: org.inferredParent ? 'var(--text)' : 'var(--text-muted)', fontStyle: org.inferredParent ? 'normal' : 'italic' }}>
+                    {org.inferredParent || '(root)'}
+                  </td>
                   <td>{org.headName}</td>
                   <td>{org.headExternalId}</td>
                   <td>
